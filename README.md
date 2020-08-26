@@ -1,5 +1,9 @@
 # dramacreator 🧕
 
+## Setup
+1. install node.js with npm
+2. run `npm install`
+
 ## Folders
 - [./client](./client): Client Source Code
 - [./server](./server): Server Source Code
