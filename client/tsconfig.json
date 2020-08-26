@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "outDir": "../dist/client",
+    "noImplicitAny": true,
+    "allowJs": true,
+    "module": "es6",
+    "moduleResolution": "node",
+    "target": "es5",
+    "jsx": "react",
+    "sourceMap": true
+  },
+  "include": [
+    "./src/**/*.js",
+    "./src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

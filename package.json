@@ -1,0 +1,34 @@
+{
+  "name": "dramacreator",
+  "version": "1.0.0",
+  "description": "sandbox",
+  "main": "client/src/index.js",
+  "scripts": {
+    "start": "npm-run-all -p -l start:client start:server:watched",
+    "build": "npm-run-all -p -l build:client build:server",
+    "build:server": "webpack --config server/webpack.config.js",
+    "build:server:watched": "webpack --config server/webpack.config.js --watch",
+    "build:client": "webpack --config client/webpack.config.js",
+    "start:server": "nodemon dist/server/bundle.js --watch dist/server",
+    "start:server:watched": "npm-run-all -p build:server:watched start:server",
+    "start:client": "webpack-dev-server --port 8080 --config client/webpack.config.js --watch --colors --content-base dist/client --mode development"
+  },
+  "author": "Lukas Westner",
+  "contributors": [
+    "Andreas Wolf"
+  ],
+  "license": "GNU GPLv3",
+  "devDependencies": {
+    "express": "^4.17.1",
+    "html-webpack-plugin": "^4.3.0",
+    "nodemon": "^2.0.4",
+    "npm-run-all": "^4.1.5",
+    "source-map-support": "^0.5.19",
+    "ts-loader": "^8.0.3",
+    "typescript": "^4.0.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "webpack-node-externals": "^2.5.2"
+  }
+}

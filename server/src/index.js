@@ -1,3 +1,4 @@
+require('source-map-support').install();
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -6,13 +7,16 @@ const port = 6969;
 const webSocketServer = new WebSocket.Server({ server });
 const maxConnections = 4;
 
+import Player from './player';
+import LogUtils from '../../common/src/LogUtils';
+
+
 var players = [];
 var player = new Player("Test");
 
 
 start();
 function start(){
-
     webSocketServer.on("connection", connect);
     server.listen(port, function () { console.log("server is listening"); });
 }
@@ -21,7 +25,7 @@ function connect(socket) {
 
     if (players.length < maxConnections) {
         players.push(new Player(socket));
-        console.log("Player connected");
+        LogUtils.logInfo("Player connected");
     } else {
         console.log("Server full")
         return;

@@ -1,8 +1,11 @@
-window.onload = function () {
-    canvas = document.getElementById("canvas");
-    ctx = canvas.getContext("2d");
+import * as Inputs from './input';
+import LogUtils from '../../common/src/LogUtils'
 
-    addInputListener();
+window.onload = function () {
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+
+    Inputs.addInputListener(()=>console.log("Input click"), ()=>console.log("Input down"));
     connect();
     requestAnimationFrame(loop);
 }
@@ -19,18 +22,14 @@ function connect() {
     socket.binaryType = "arraybuffer";
 
     socket.onopen = function (evt) {
-        console.log("connected!");
+        LogUtils.logInfo("connected!");
     }
     socket.onmessage = function (evt) {
         var buffer = new Uint8Array(evt.data);
     }
     socket.onclose = function (evt) {
-        console.log("disconnected");
+        LogUtils.logInfo("disconnected!");
     }
-}
-
-function Test(){
-    
 }
 
 var lastTimestamp;
