@@ -2,7 +2,7 @@
   "name": "dramacreator",
   "version": "1.0.0",
   "description": "sandbox",
-  "main": "client/src/index.js",
+  "main": "dist/server/boundle.js",
   "scripts": {
     "start": "npm-run-all -p -l start:client start:server:watched",
     "build": "npm-run-all -p -l build:client build:server",
