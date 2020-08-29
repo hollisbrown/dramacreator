@@ -4,7 +4,7 @@
   "description": "sandbox",
   "main": "dist/server/boundle.js",
   "scripts": {
-    "start": "npm-run-all -p -l start:client start:server:watched",
+    "start": "npm-run-all -p -l start:client start:server",
     "build": "npm-run-all -p -l build:client build:server",
     "build:server": "webpsack --config server/webpack.config.js",
     "build:server:watched": "webpack --config server/webpack.config.js --watch",
@@ -30,5 +30,8 @@
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0",
     "webpack-node-externals": "^2.5.2"
+  },
+  "engines": {
+    "node": "13.x"
   }
 }
