@@ -4,6 +4,7 @@ export default class Character {
 
     id: number;
     assetId: number;
+    frameId: number;
     position: Position;
     positionLast: Position;
     positionTarget: Position;
@@ -13,15 +14,11 @@ export default class Character {
     constructor(
         id: number,
         assetId: number = 0,
+        frameId: number = 0,
         position: Position = new Position
     ) {
         this.id = id;
         this.assetId = assetId;
         this.position = position;
-    }
-
-
-    lol(){
-        console.log("rofl" + this.id);
     }
 }

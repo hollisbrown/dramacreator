@@ -7,25 +7,13 @@ const port = 6969;
 const webSocketServer = new WebSocket.Server({ server });
 const maxConnections = 4;
 
+import Config from '../../common/src/Config';
 import Player from './player';
 import Position from '../../common/src/Position';
-import { MessageType } from '../../common/src/Message';
-import GameData from '../../common/src/GameData';
-
-var config = {
-    maxPlayers: 8,
-    maxAssets: 128,
-    maxItems: 128,
-    maxCharacters: 8,
-    tilesPerRow: 32,
-    pixelsPerRow: 32,
-    pixelsPerImage: 1024,
-    characterSpeed: 12,
-    fastFramesPerSecond: 2
-};
+import Game from '../../common/src/Game';
 
 var players: Player[] = [];
-var game: GameData = new GameData();
+var game: Game = new Game();
 
 start();
 
@@ -33,21 +21,26 @@ function start() {
     console.log("Server starting ...");
     webSocketServer.on("connection", connect);
     server.listen(port, function () { console.log("server is listening"); });
-    game.init(config);
+
+    game.create();
 }
 
 function connect(socket: any) {
 
+    addPlayer(socket);
+    socket.on("close", function close(evt: any) { removePlayer(socket); });
+    socket.on("message", receive);
+}
+
+function addPlayer(socket: any) {
     if (players.length < maxConnections) {
         players.push(new Player(socket));
-        console.log("connected players: " + players.length);
+        console.log("Player added. Number of players: " + players.length);
     } else {
-        console.log("Server full")
+        console.log("Server full. Number of players: " + players.length)
         return;
     }
-    sendSync(socket);
-    socket.on("close", function close(closeEvent: any) { removePlayer(socket); });
-    socket.on("message", receive);
+    socket.send(JSON.stringify(game));
 }
 
 function removePlayer(socket: any) {
@@ -62,24 +55,10 @@ function removePlayer(socket: any) {
 
 function receive(string: string) {
 
-    console.log("Message received");
-    var message = JSON.parse(string);
-    switch (message.type) {
-        case MessageType.TEST:
-            var posArray: Position[] = message.data.map((pos: any) => Object.assign(new Position, pos));
-            for (var i = 0; i < posArray.length; i++) {
-                console.log(posArray[i].toString());
-            }
-            break;
-    }
 }
 
 function sendToAll(buffer: Uint8Array) {
     for (var i = 0; i < players.length; i++) {
         players[i].socket.send(buffer);
     }
-}
-
-function sendSync(socket: any){
-    socket.send(JSON.stringify(game));
 }
