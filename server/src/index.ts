@@ -24,14 +24,12 @@ function start() {
 
     game.create();
 }
-
 function connect(socket: any) {
 
     addPlayer(socket);
     socket.on("close", function close(evt: any) { removePlayer(socket); });
     socket.on("message", receive);
 }
-
 function addPlayer(socket: any) {
     if (players.length < maxConnections) {
         players.push(new Player(socket));
@@ -42,7 +40,6 @@ function addPlayer(socket: any) {
     }
     socket.send(JSON.stringify(game));
 }
-
 function removePlayer(socket: any) {
     for (var i = 0; i < players.length; i++) {
         if (players[i].socket == socket) {
@@ -52,11 +49,9 @@ function removePlayer(socket: any) {
     }
     console.log("Player removed ");
 }
-
 function receive(string: string) {
 
 }
-
 function sendToAll(buffer: Uint8Array) {
     for (var i = 0; i < players.length; i++) {
         players[i].socket.send(buffer);

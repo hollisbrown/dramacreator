@@ -22,6 +22,7 @@ export default class Item {
         this.frameId = frameId;
         this.assetId = assetId;
         this.position = position;
+        this.positionRender = position;
         this.containerId = containerId;
         this.containerSlot = containerSlot;
     }

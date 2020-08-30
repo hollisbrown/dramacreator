@@ -12,7 +12,6 @@ interface ISortable {
     assetId: number;
     frameId: number;
 }
-
 export default class Renderer {
 
     camera: Camera;
@@ -20,12 +19,13 @@ export default class Renderer {
     ctx: any;
     bufferCanvas: any[] = [];
     bufferCtx: any[] = [];
+    renderStack: ISortable[] = [];
 
-    init() {
+    constructor(canvas: any, ctx: any, camera: Camera) {
 
-        this.camera = new Camera();
-        this.canvas = document.getElementById("canvas");
-        this.ctx = this.canvas.getContext("2d");
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.camera = camera;
 
         for (var i = 0; i < Config.maxAssets; i++) {
             var canv = document.createElement("canvas");
@@ -38,7 +38,6 @@ export default class Renderer {
             this.bufferCtx.push(context);
         }
     }
-
     createSprites(assets: Asset[]) {
         for (var i = 0; i < Config.maxAssets; i++) {
             this.renderImageToContext(assets[i].image, this.bufferCtx[i], 0, 1);
@@ -51,39 +50,44 @@ export default class Renderer {
         //     spritesToRenderCharacter.push(0);
         // }
     }
-
     update(characterLerp: number, game: Game) {
 
-        let renderStack: ISortable[] = [];
+        this.renderStack = [];
 
         //Add characters to render stack
         for (var i = 0; i < game.characters.length; i++) {
-            var character: Character = game.characters[i];
-            character.positionRender = character.positionLast.lerp(character.position, characterLerp);
-            renderStack.push(character);
+            let character = Object.assign(new Character(i),game.characters[i]);
+            character.lerp(characterLerp);
+            this.renderStack.push(character);
         }
 
         //Add items to render stack
         for (var i = 0; i < game.items.length; i++) {
-            var item: Item = game.items[i];
 
-            if (item.containerId != 0) {
+            if (game.items[i].containerId != 0) {
                 return;
             }
-            renderStack.push(item);
+            let item = Object.assign(new Item(i),game.items[i]);
+            this.renderStack.push(item);
         }
 
         //Z sort render stack
-        renderStack.sort(function (a, b) { return a.positionRender.x - b.positionRender.y });
+        this.renderStack.sort(function (a, b) { return a.positionRender.x - b.positionRender.y });
 
         //DRAW STUFF
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(this.camera.position.x, this.camera.position.y);
         //DRAW BACKGROUND (Tiles)
         for (var i = 0; i < game.tiles.length; i++) {
-            var x = Config.pixelsPerRow * (i % Config.tilesPerRow);
-            var y = Config.pixelsPerRow * (Math.floor(i / Config.tilesPerRow));
-            var assetId = game.tiles[i].assetId;
+            let x = Config.pixelsPerRow * (i % Config.tilesPerRow);
+            let y = Config.pixelsPerRow * (Math.floor(i / Config.tilesPerRow));
+            let assetId = game.tiles[i].assetId;
+
+            this.ctx.drawImage(
+                this.bufferCanvas[assetId],
+                0, 0, Config.pixelsPerRow, Config.pixelsPerRow,
+                x, y, Config.pixelsPerRow, Config.pixelsPerRow);
+
             // if (game.assets[assetId].type == AssetType.WALL) {
             //     for (var frameNumber = 0; frameNumber < spritesToRenderWall[i].length; frameNumber++) {
             //         if (spritesToRenderWall[i][frameNumber]) {
@@ -101,15 +105,21 @@ export default class Renderer {
             // }
         }
         //DRAW FOREGROUND (Characters, Items ...)
-        for (var i = 0; i < renderStack.length; i++) {
-            var offset: number = 0;
-            if (game.assets[renderStack[i].assetId].type == AssetType.CHARACTER) {
+        for (var i = 0; i < this.renderStack.length; i++) {
+            let spriteId: number = 0;
+            if (game.assets[this.renderStack[i].assetId].type == AssetType.CHARACTER) {
                 //offset = spritesToRenderCharacter[renderStack[i].characterId];
             }
             this.ctx.drawImage(
-                this.bufferCanvas[renderStack[i].assetId],
-                offset * Config.pixelsPerRow, 0, Config.pixelsPerRow, Config.pixelsPerRow,
-                renderStack[i].positionRender.x, renderStack[i].positionRender.y, Config.pixelsPerRow, Config.pixelsPerRow
+                this.bufferCanvas[this.renderStack[i].assetId],
+                spriteId * Config.pixelsPerRow, 
+                0, 
+                Config.pixelsPerRow, 
+                Config.pixelsPerRow,
+                this.renderStack[i].positionRender.x, 
+                this.renderStack[i].positionRender.y, 
+                Config.pixelsPerRow, 
+                Config.pixelsPerRow
             );
 
         }
@@ -133,7 +143,6 @@ export default class Renderer {
         this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
         this.ctx.scale(1 / this.camera.zoom, 1 / this.camera.zoom);
     }
-
     renderImageToContext(image: Uint8Array, context: any, frame: number, pixelSize: number) {
 
         for (var i = 0; i < Config.pixelsPerImage; i++) {
@@ -148,15 +157,12 @@ export default class Renderer {
             context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
         }
     }
-
     debugShowSprites() {
 
         for (var i = 0; i < this.bufferCanvas.length; i++) {
             var x: number = i % Config.pixelsPerRow;
             var y: number = Math.floor(i / Config.pixelsPerRow);
-            this.ctx.drawImage(this.bufferCanvas[i], x*(32 + 20), y*(32 + 20));
+            this.ctx.drawImage(this.bufferCanvas[i], x * (32 + 4), y * (32 + 4));
         }
     }
 }
-
-

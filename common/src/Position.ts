@@ -3,7 +3,6 @@ export default class Position {
     x: number;
     y: number;
 
-
     constructor(x: number = 0, y: number = 0) {
         this.x = x;
         this.y = y;
@@ -14,12 +13,15 @@ export default class Position {
     }
     normalized(): Position {
         let mag = this.magnitude();
-        return new Position(
-            this.x / mag,
-            this.y / mag
-        );
+        if(mag>0){
+            return new Position(
+                this.x / mag,
+                this.y / mag
+            );
+        }
+        return new Position(0,0);
     }
-    distance(other: Position) {
+    distance(other: Position): number {
         let dx = other.x - this.x;
         let dy = other.y - this.y;
         return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
@@ -31,7 +33,7 @@ export default class Position {
         )
     }
     toString(): string {
-        return " Position [ " + this.x + " | " + this.y + " ] ";
+        return " [ " + this.x + " | " + this.y + " ] ";
     }
     add(other: Position): Position {
         return new Position(

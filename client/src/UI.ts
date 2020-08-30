@@ -1,3 +1,4 @@
+import Config from '../../common/src/Config';
 import Position from '../../common/src/Position';
 import Input from './Input';
 
@@ -9,7 +10,6 @@ export default class UI {
     constructor(ctx: any) {
         this.ctx = ctx;
     }
-
     button(
         input: Input,
         name: string,
@@ -60,6 +60,48 @@ export default class UI {
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.2)";
+            this.ctx.fillRect(x, y, width, height);
+            return input.isMouseClicked;
+        }
+    }
+    asset(
+        input: Input,
+        bufferCanvas: any,
+        name: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        color: string
+        ) {
+
+            this.ctx.fillStyle = color;
+            this.ctx.fillRect(x, y, width, height);
+            this.ctx.drawImage(
+                bufferCanvas,
+            0,
+            0,
+            Config.pixelsPerRow,
+            Config.pixelsPerRow,
+            x + 10,
+            y + 10,
+            Config.pixelsPerRow,
+            Config.pixelsPerRow
+        );
+
+        this.ctx.fillStyle = "#CCCCCC";
+        this.ctx.textAlign = "left";
+        this.ctx.font = "600 15px Courier New";
+        this.ctx.fillText(name, x + 60, y + 30);
+
+        var isHovered =
+            input.mouse.x > x &&
+            input.mouse.x < x + width &&
+            input.mouse.y > y &&
+            input.mouse.y < y + height;
+
+        if (isHovered) {
+            this.ctx.fillStyle = "rgba(255,255,255,0.02)";
             this.ctx.fillRect(x, y, width, height);
             return input.isMouseClicked;
         }
@@ -152,8 +194,6 @@ export default class UI {
         y: number,
         width: number,
         height: number,
-        isTyping: boolean,
-        inputString: string
     ) {
 
         this.ctx.fillStyle = "#ffffff";
@@ -163,8 +203,8 @@ export default class UI {
         this.ctx.textAlign = "left";
         this.ctx.fillStyle = "#000000";
 
-        if (isTyping) {
-            var lines = this.getTextLines(inputString, Math.floor(width / 10));
+        if (input.isTyping) {
+            var lines = this.getTextLines(input.typedString, Math.floor(width / 10));
 
             if (this.cursorTimer < 0.5) {
                 lines[lines.length - 1] += "|";
@@ -179,7 +219,7 @@ export default class UI {
             this.ctx.fillText(lines[i], x + 12, y + 20 + (i * 20));
         }
 
-        if (!isTyping) {
+        if (!input.isTyping) {
             var isHovered =
                 input.mouse.x > x &&
                 input.mouse.x < x + width &&
