@@ -4,6 +4,7 @@ import UI from './UI';
 import Renderer from './Renderer';
 import Editor from './Editor';
 import Game from '../../common/src/Game';
+import Asset, { AssetType } from '../../common/src/Asset';
 import Camera from './Camera';
 import Config from '../../common/src/Config';
 import Position from '../../common/src/Position';
@@ -19,7 +20,7 @@ var ui: UI = new UI(ctx);
 var input: Input = new Input(canvas);
 var camera: Camera = new Camera(canvas);
 var renderer: Renderer = new Renderer(canvas, ctx, camera);
-var builder: Builder = new Builder(ctx, input, game, ui, renderer, camera);
+var builder: Builder = new Builder(canvas, ctx, input, game, ui, renderer, camera, onBuild);
 
 var lastTimestamp: number = 0;
 
@@ -48,11 +49,7 @@ function connect() {
         console.log("Connected.");
     }
     socket.onmessage = function (evt: any) {
-        console.log("Received Game Data");
-        var receivedJSON = evt.data;
-        let receivedObject = JSON.parse(receivedJSON);
-        game = Object.assign(new Game, receivedObject);
-        renderer.createSprites(game.assets);
+        receive(evt.data);
     }
     socket.onclose = function (evt: any) {
         console.log("Disconnected.");
@@ -61,13 +58,37 @@ function connect() {
         console.error("WebSocket error observed:", evt);
     };
 }
+function receive(json: string) {
+    let object = JSON.parse(json);
+    let type: string = object.type;
+    let data: any = object.data;
+
+    switch (type) {
+        case "GAME":
+            let gameData = Object.assign(new Game, data);
+            game.load(gameData);
+            for (var i = 0; i < game.assets.length; i++) {
+                renderer.createSprites(game.assets[i]);
+            }
+            break;
+        case "ASSET":
+            let assetId = game.setAsset(data);
+            renderer.createSprites(game.assets[assetId]);
+            break;
+        case "TILE":
+            game.setTile(data);
+            break;
+        case "ITEM":
+            game.setItem(data);
+            break;
+        case "CHARACTER":
+            game.setCharacter(data);
+            break;
+    }
+}
 function update(timestamp: number) {
     let deltaTime: number = (timestamp - lastTimestamp) / 1000;
     lastTimestamp = timestamp;
-
-    //bg
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (game.isRunning) {
         game.update(deltaTime);
@@ -106,14 +127,16 @@ function updateFree(deltaTime: number) {
 }
 function updateBuild(deltaTime: number) {
 
-    camera.move(input.direction, deltaTime);
-
-    if (input.isShortcutFreeMode) {
-        changeMode(Mode.FREE);
-    }
-
     builder.update();
-    //editor.update();
+
+    if (!builder.editor.isEnabled) {
+
+        camera.move(input.direction, deltaTime);
+
+        if (input.isShortcutFreeMode) {
+            changeMode(Mode.FREE);
+        }
+    }
 }
 function updatePlay(deltaTime: number) {
 
@@ -145,4 +168,9 @@ function changeMode(m: Mode) {
         case Mode.SPECTATE:
             break;
     }
+}
+function onBuild(type: string, data: any) {
+    let message = { type, data };
+    let messageJSON = JSON.stringify(message);
+    socket.send(messageJSON);
 }

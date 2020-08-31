@@ -1,109 +1,124 @@
-import Asset from '../../common/src/Asset';
+import Asset, { AssetType } from '../../common/src/Asset';
+import Sprite from '../../common/src/Sprite';
 import Config from '../../common/src/Config';
 import Input from './Input';
 import UI from './UI';
+import Position from '../../common/src/Position';
 
 export default class Editor {
 
     toolSet: string[] = [
         "Paint",
-        "Erase"
+        "Fill"
     ]
-
     ui: UI;
     input: Input;
+    canvas: any;
     ctx: any;
 
+    isEnabled: boolean = false;
     isGridVisible: boolean = true;
+    isMouseOnSprite: boolean;
+    isTranslatingPixels: boolean = false;
     selectedColor: number = 1;
     selectedTool: number = 0;
-    selectedImage: number = 0;
     selectedType: number = 0;
 
-    editorImage: Uint8Array = new Uint8Array(Config.pixelsPerRow * Config.pixelsPerRow);
-
-    editorAsset: Asset = new Asset(0);
-    editorName = "Bob the Builder";
-    editorDescription = "Looks like a cool dude with an nice hat";
+    asset: Asset;
     editorAssetTypes = ["None", "Floor", "Wall", "Item", "Character"];
+    onBuild: (type: string, data: any) => void;
 
-    constructor(ctx: any, input: Input, ui: UI) {
+    constructor(
+        canvas: any,
+        ctx: any,
+        input: Input,
+        ui: UI,
+        onBuild: (type: string, data: any) => void
+    ) {
+        this.canvas = canvas;
         this.ctx = ctx;
         this.input = input;
         this.ui = ui;
+        this.onBuild = onBuild;
     }
     update() {
         this.background();
-        //this.renderImageToContext(editorImage, ctx, 0, Config.editorPixelSize);
+        this.asset.sprite.render(this.ctx, Config.colorSet, 0, Config.editorPixelSize);
         this.grid();
-        this.mouse();
         this.swatches(790, 16, 4, 42, 42);
         this.tools(940, 16, 4, 120, 50);
         this.commands(1080, 16, 4, 120, 50);
         this.properties(940, 300, 4, 250, 600);
+        this.paint();
+        this.translate();
     }
-    mouse() {
-        let mousePixel = this.input.mousePixel();
-        if (this.input.isMouseClicked || this.input.isMouseDown) {
-            this.input.stopTyping();
-            
-            if (this.selectedTool == 0) { //PAINT
-                
-                if (this.input.isMouseRight) {
-                    this.setPixel(mousePixel.x, mousePixel.y, 0);
-                } else {
-                    this.setPixel(mousePixel.x, mousePixel.y, this.selectedColor);
-                }
-            }
-            else if (this.selectedTool == 1) { //FILL
-                let pixelIds: number[] = [];
-                let hoveredId: number = this.getPixelIndex(mousePixel.x, mousePixel.y);
-                let currentColor = this.editorImage[hoveredId];
-                this.collectFloodPixels(
-                    pixelIds, 
-                    mousePixel.x, 
-                    mousePixel.y, 
-                    currentColor, this.selectedColor);
 
-                if (this.input.isMouseRight) {
-                    this.setPixelArray(pixelIds, 0);
-                } else {
-                    this.setPixelArray(pixelIds, this.selectedColor);
+    paint() {
+        this.isMouseOnSprite =
+            this.input.mouse.x >= 0 &&
+            this.input.mouse.x < Config.editorPixelSize * Config.pixelsPerRow &&
+            this.input.mouse.y >= 0 &&
+            this.input.mouse.y < Config.editorPixelSize * Config.pixelsPerRow;
+
+        if (!this.isMouseOnSprite) {
+            return;
+        }
+
+        let mousePixel = this.input.mousePixel();
+        switch (this.selectedTool) {
+            case 0://PAINT
+
+                if (this.input.isMouseClicked || this.input.isMouseDown || this.input.isMouseHold) {
+                    if (this.input.isMouseRight) {
+                        this.asset.sprite.setPixel(mousePixel.x, mousePixel.y, 0);
+                    } else {
+                        this.asset.sprite.setPixel(mousePixel.x, mousePixel.y, this.selectedColor);
+                    }
                 }
-            }
+                break;
+
+            case 1://FILL
+
+                if (this.input.isMouseDown) {
+                    let pixelList: number[] = [];
+                    let currentColor = this.asset.sprite.getPixel(mousePixel.x, mousePixel.y);
+                    this.asset.sprite.addPixelsToList(pixelList, mousePixel.x, mousePixel.y, currentColor);
+
+                    console.log(pixelList);
+                    if (this.input.isMouseRight) {
+                        this.asset.sprite.setPixelArray(pixelList, 0);
+                    } else {
+                        this.asset.sprite.setPixelArray(pixelList, this.selectedColor);
+                    }
+                }
+                break;
+
         }
 
         //cursor
         this.ctx.fillStyle = "rgba(255,255,255,0.1)";
         this.ctx.fillRect(
-            mousePixel.x * Config.editorPixelSize, 
-            mousePixel.y * Config.editorPixelSize, 
-            Config.editorPixelSize, 
+            mousePixel.x * Config.editorPixelSize,
+            mousePixel.y * Config.editorPixelSize,
+            Config.editorPixelSize,
             Config.editorPixelSize);
     }
-    keys(key: any) {
-        // switch (key) {
-        //     case "ArrowLeft":
-        //     case "a":
-        //         this.editorImage = this.getImageTranslated(this.editorImage, 1, 0);
-        //         break;
-        //     case "ArrowRight":
-        //     case "d":
-        //         this.editorImage = this.getImageTranslated(this.editorImage, -1, 0);
-        //         break;
-        //     case "ArrowUp":
-        //     case "w":
-        //         this.editorImage = this.getImageTranslated(this.editorImage, 0, 1);
-        //         break;
-        //     case "ArrowDown":
-        //     case "s":
-        //         this.editorImage = this.getImageTranslated(this.editorImage, 0, -1);
-        //         break;
-        // }
+
+    translate() {
+        let x = this.input.direction.x;
+        let y = this.input.direction.y;
+
+        if (x != 0 || y != 0) {
+            if (!this.isTranslatingPixels) {
+                this.isTranslatingPixels = true;
+                this.asset.sprite.pixels = new Uint8Array(this.asset.sprite.getPixelsTranslated(x, y));
+                console.log("translated");
+            }
+        } else {
+            this.isTranslatingPixels = false;
+        }
     }
-    getPixelIndex(x: number, y: number) {
-        return (y * Config.pixelsPerRow) + x;
-    }
+
     swatches(startX: number, startY: number, padding: number, width: number, height: number) {
         var x;
         var y;
@@ -174,7 +189,7 @@ export default class Editor {
         y += height + padding;
 
         if (this.ui.button(this.input, "CLEAR", x, y, width, height, "#333333")) {
-            this.clearImage();
+            this.asset.sprite.setAllPixels(0);
         }
 
         y += height + padding;
@@ -184,75 +199,35 @@ export default class Editor {
         }
     }
     properties(startX: number, startY: number, padding: number, width: number, height: number) {
-        if (this.ui.textBox(this.input, this.editorName, startX, startY + 200, width, 60)) {
+        if (this.ui.textBox(this.input, this.asset.name, startX, startY + 200, width, 60)) {
             this.input.stopTyping();
-            this.input.startTyping(this.editorName);
+            this.input.startTyping(this.asset.name);
         }
 
-        if (this.ui.textBox(this.input, this.editorDescription, startX, startY + 280, width, 120)) {
+        if (this.ui.textBox(this.input, this.asset.description, startX, startY + 280, width, 120)) {
             this.input.stopTyping();
-            this.input.startTyping(this.editorDescription);
+            this.input.startTyping(this.asset.description);
         }
 
-        var dropDownSelection = this.ui.dropDown(this.input, this.editorAssetTypes, this.editorAsset.type, startX, startY, 80, 30, "#777777");
+        var dropDownSelection = this.ui.dropDown(this.input, this.editorAssetTypes, this.asset.type, startX, startY, 80, 30, "#777777");
         if (dropDownSelection != -1) {
-            this.editorAsset.type = dropDownSelection;
+            this.asset.type = dropDownSelection;
         }
     }
     load(asset: Asset) {
-        this.input.stopTyping();
-        this.editorAsset = asset;
-        this.editorImage = new Uint8Array(asset.image);
-        this.selectedImage = asset.id;
+        this.asset = asset;
         this.selectedTool = 0;
-
-        this.editorName = asset.name;
-        this.editorDescription = asset.description;
+        this.isEnabled = true;
     }
     save() {
-
-        this.input.stopTyping();
-        this.editorAsset.name = this.editorName;
-        this.editorAsset.description = this.editorDescription;
-        return this.editorAsset;
-    }
-    clearImage() {
-        for (var i = 0; i < Config.pixelsPerImage; i++) {
-            this.editorImage[i] = 0;
-        }
-    }
-    setPixel(x: number, y: number, color: number) {
-
-        let id = this.getPixelIndex(x, y);
-        this.editorImage[id] = color;
-    }
-    setPixelArray(ids: number[], color: number) {
-        for (var i = 0; i < ids.length; i++) {
-            this.editorImage[ids[i]] = color;
-        }
-    }
-    collectFloodPixels(pixelIds: number[], x: number, y: number, colorBefore: number, colorAfter: number) {
-        let id = this.getPixelIndex(x, y);
-        for (var i = 0; i < pixelIds.length; i++) {
-            if (pixelIds[i] == id) {
-                return;
-            }
-        }
-
-        if (this.editorImage[id] == colorBefore) {
-
-            pixelIds.push(id);
-            if (x < Config.pixelsPerRow - 1)
-                this.collectFloodPixels(pixelIds, x + 1, y, colorBefore, colorAfter);
-            if (y < Config.pixelsPerRow - 1)
-                this.collectFloodPixels(pixelIds, x, y + 1, colorBefore, colorAfter);
-            if (x > 0)
-                this.collectFloodPixels(pixelIds, x - 1, y, colorBefore, colorAfter);
-            if (y > 0)
-                this.collectFloodPixels(pixelIds, x, y - 1, colorBefore, colorAfter);
-        }
+        //this.input.stopTyping();
+        this.onBuild("ASSET", this.asset);
+        this.isEnabled = false;
     }
     background() {
+        this.ctx.fillStyle = "#000000";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.ctx.fillStyle = "#101010";
         this.ctx.fillRect(0, 0, Config.editorPixelSize * Config.pixelsPerRow, Config.editorPixelSize * Config.pixelsPerRow);
     }

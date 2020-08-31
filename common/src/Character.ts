@@ -12,7 +12,7 @@ export default class Character {
     bufferCanvas: OffscreenCanvas;
 
     constructor(
-        id: number,
+        id: number = 0,
         assetId: number = 0,
         frameId: number = 0,
         position: Position = new Position()

@@ -1,23 +1,25 @@
+import Sprite from './Sprite';
+
 export default class Asset {
 
     id: number;
     type: number;
     name: string;
     description: string;
-    image: Uint8Array;
+    sprite: Sprite;
 
     constructor(
-        id: number,
+        id: number = 0,
         type: number = 0,
-        name: string = "Unnamed",
-        description: string = "Nothing to see here.",
-        image: Uint8Array = new Uint8Array()
+        name: string = "_",
+        description: string = "__",
+        sprite: Sprite = new Sprite()
     ) {
         this.id = id;
         this.type = type;
         this.name = name;
         this.description = description;
-        this.image = image;
+        this.sprite = sprite;
     }
 }
 

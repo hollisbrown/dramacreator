@@ -11,6 +11,7 @@ import Config from '../../common/src/Config';
 import Player from './player';
 import Position from '../../common/src/Position';
 import Game from '../../common/src/Game';
+import Asset from '../../common/src/Asset';
 
 var players: Player[] = [];
 var game: Game = new Game();
@@ -38,7 +39,8 @@ function addPlayer(socket: any) {
         console.log("Server full. Number of players: " + players.length)
         return;
     }
-    socket.send(JSON.stringify(game));
+    let message = { type: "GAME", data: game };
+    socket.send(JSON.stringify(message));
 }
 function removePlayer(socket: any) {
     for (var i = 0; i < players.length; i++) {
@@ -49,10 +51,32 @@ function removePlayer(socket: any) {
     }
     console.log("Player removed ");
 }
-function receive(string: string) {
+function receive(json: string) {
+    let object = JSON.parse(json);
+    let type: string = object.type;
+    let data = object.data;
+    let id: number = -1;
 
+    switch (type) {
+        case "ASSET":
+            id = game.setAsset(data);
+            break;
+        case "TILE":
+            id = game.setTile(data);
+            break;
+        case "ITEM":
+            id = game.setItem(data);
+            break;
+        case "CHARACTER":
+            id = game.setCharacter(data);
+            break;
+    }
+
+    if (id != -1) {
+        sendToAll(json);
+    }
 }
-function sendToAll(buffer: Uint8Array) {
+function sendToAll(buffer: string) {
     for (var i = 0; i < players.length; i++) {
         players[i].socket.send(buffer);
     }

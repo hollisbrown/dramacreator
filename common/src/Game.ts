@@ -1,6 +1,6 @@
-
 import Config from './Config';
-import Asset from './Asset';
+import Asset, { AssetType } from './Asset';
+import Sprite from './Sprite';
 import Tile from './Tile';
 import Item from './Item';
 import Character from './Character';
@@ -19,55 +19,87 @@ export default class Game {
     }
     create() {
         for (var i = 0; i < Config.maxAssets; i++) {
-            var asset = new Asset(i);
-            asset.image = new Uint8Array(Config.pixelsPerImage);
-            var randomColor = Math.floor(Math.random() * 30);
-            for (var j = 0; j < Config.pixelsPerImage; j++) {
-                asset.image[j] = randomColor;
-            }
+            let sprite = new Sprite(i, Config.pixelsPerRow, new Uint8Array(Config.pixelsPerImage));
+            let randomColor = Math.floor(Math.random() * 30);
+            sprite.setAllPixels(randomColor);
+
+            let asset = new Asset(i, AssetType.NONE, "Unnamed " + i, "Nothing to see here.", sprite);
             this.assets.push(asset);
         }
         for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
-            var tile = new Tile(i, 1);
+            let tile = new Tile(i, 1);
             this.tiles.push(tile);
         }
         for (var i = 0; i < Config.maxItems; i++) {
-            var item = new Item(i, 2, 0, new Position(i*40,50));
+            let item = new Item(i, 2, 0, new Position(i * 40, 50));
             this.items.push(item);
         }
         for (var i = 0; i < Config.maxCharacters; i++) {
-            var character = new Character(i, 3);
+            let character = new Character(i, 3);
             this.characters.push(character);
         }
 
         this.isRunning = true;
     }
-    fromJSON(json: string) {
-        var object = JSON.parse(json);
-        var loadedGame = Object.assign(new Game(), object);
-        var loadedConfig = Object.assign(new Config(), loadedGame.config);
+    load(data: Game) {
 
-        for (var i = 0; i < loadedGame.assets.length; i++) {
-            console.log(i);
-            var asset: Asset = Object.assign(new Asset(i), loadedGame.assets[i]);
+        for (var i = 0; i < data.assets.length; i++) {
+            let asset = Object.assign(new Asset(), data.assets[i]);
+            let sprite = Object.assign(new Sprite(), data.assets[i].sprite);
+            asset.sprite = sprite;
             this.assets.push(asset);
         }
-        for (var i = 0; i < loadedGame.tiles.length; i++) {
-            var tile: Tile = Object.assign(new Tile(i), loadedGame.tiles[i]);
+        for (var i = 0; i < data.tiles.length; i++) {
+            let tile = Object.assign(new Tile, data.tiles[i]);
             this.tiles.push(tile);
         }
-        for (var i = 0; i < loadedGame.items.length; i++) {
-            var item: Item = Object.assign(new Item(i), loadedGame.items[i]);
+        for (var i = 0; i < data.items.length; i++) {
+            let item = Object.assign(new Item, data.items[i]);
             this.items.push(item);
         }
-        for (var i = 0; i < loadedGame.characters.length; i++) {
-            var character: Character = Object.assign(new Character(i), loadedGame.characters[i]);
+        for (var i = 0; i < data.characters.length; i++) {
+            let character = Object.assign(new Character, data.characters[i]);
             this.characters.push(character);
         }
 
         this.isRunning = true;
     }
     update(deltaTime: number) {
-
+    }
+    setAsset(data: any): number {
+        let asset = Object.assign(new Asset(), data);
+        asset.sprite = Object.assign(new Sprite(), asset.sprite);
+        if (asset.id == -1) {
+            //try to find empty ID
+            //add new at ID
+        } else {
+            this.assets[asset.id] = asset;
+        }
+        return asset.id;
+    }
+    setTile(data: any): number {
+        let tile = Object.assign(new Tile(), data);
+        this.tiles[tile.id] = tile;
+        return tile.id;
+    }
+    setItem(data: any): number {
+        let item = Object.assign(new Item(), data);
+        if (item.id == -1) {
+            //try to find empty ID
+            //add new at ID
+        } else {
+            this.items[item.id] = item;
+        }
+        return item.id;
+    }
+    setCharacter(data: any): number {
+        let character = Object.assign(new Character(), data);
+        if (character.id == -1) {
+            //try to find empty ID
+            //add new at ID
+        } else {
+            this.characters[character.id] = character;
+        }
+        return character.id;
     }
 }

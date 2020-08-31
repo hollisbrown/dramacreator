@@ -1,4 +1,5 @@
 import Position from "./Position";
+import { AssetType } from './Asset';
 
 export default class Tile {
 
@@ -8,7 +9,7 @@ export default class Tile {
     positionRender: Position;
 
     constructor(
-        id: number,
+        id: number = 0,
         assetId: number = 0,
         position: Position = new Position
     ) {
@@ -16,5 +17,4 @@ export default class Tile {
         this.assetId = assetId;
         this.position = position;
     }
-
 }

@@ -8,6 +8,7 @@ export default class Input {
     isMouseClicked: boolean;
     isMouseDown: boolean;
     isMouseRight: boolean;
+    isMouseHold: boolean;
     isMouseOnUi: boolean;
     mouse: Position;
     scrollDelta: number;
@@ -29,12 +30,12 @@ export default class Input {
         document.addEventListener('contextmenu', (evt) => this.onContextMenu(evt));
         document.addEventListener('click', (evt) => this.onMouseClick(evt));
         document.addEventListener('mousedown', (evt) => this.onMouseDown(evt));
+        document.addEventListener('mouseup', (evt) => this.onMouseUp(evt));
         document.addEventListener('mousemove', (evt) => this.onMouseMove(evt));
         document.addEventListener('keydown', (evt) => this.onKeyDown(evt));
         document.addEventListener('keyup', (evt) => this.onKeyUp(evt));
         document.addEventListener('mousewheel', (evt) => this.onMouseWheel(evt));
     }
-
     reset() {
         this.isMouseClicked = false;
         this.isMouseDown = false;
@@ -50,18 +51,33 @@ export default class Input {
     onContextMenu(evt: any) { //default right click
         evt.preventDefault();
     }
-
-    test(): boolean {
-        return true;
+    onMouseClick(evt: any) {
+        this.isMouseClicked = true;
+        if (evt.button == 2) {
+            this.isMouseRight = true;
+        } else {
+            this.isMouseRight = false;
+        }
     }
-
+    onMouseDown(evt: any) {
+        this.isMouseDown = true;
+        this.isMouseHold = true;
+        if (evt.button == 2) {
+            this.isMouseRight = true;
+        } else {
+            this.isMouseRight = false;
+        }
+    }
+    onMouseUp(evt: any) {
+        this.isMouseHold = false;
+        this.isMouseRight = false;
+    }
     mouseCamera(cameraPosition: Position, cameraZoom: number): Position {
         return new Position(
             (this.mouse.x / cameraZoom) - cameraPosition.x,
             (this.mouse.y / cameraZoom) - cameraPosition.y
         );
     }
-
     mousePixel(): Position {
         return new Position(
             Math.floor(this.mouse.x / Config.editorPixelSize),
@@ -71,7 +87,6 @@ export default class Input {
         let mousePixel = this.mousePixel();
         return mousePixel.y * Config.pixelsPerRow + mousePixel.x;
     }
-
     mouseTile(cameraPosition: Position, cameraZoom: number): Position {
         let mouseCamera = this.mouseCamera(cameraPosition, cameraZoom);
         return new Position(
@@ -79,53 +94,20 @@ export default class Input {
             Math.floor(mouseCamera.y / Config.pixelsPerRow)
         );
     }
-
     mouseTileId(cameraPosition: Position, cameraZoom: number): number {
         let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
         return mouseTile.y * Config.tilesPerRow + mouseTile.x;
     }
-
     isMouseOnTiles(cameraPosition: Position, cameraZoom: number): boolean {
         let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
         return (mouseTile.x >= 0 && mouseTile.x < Config.tilesPerRow && mouseTile.y >= 0 && mouseTile.y < Config.tilesPerRow);
     }
-
-
     onMouseMove(evt: any) {
         let canvasRect = this.canvas.getBoundingClientRect();
 
         this.mouse = new Position(
             evt.x - canvasRect.left,
             evt.y - canvasRect.top);
-
-        // this.mouseCamera = new Position(
-        //     (this.mouse.x / this.camera.zoom) - this.camera.position.x,
-        //     (this.mouse.y / this.camera.zoom) - this.camera.position.y
-        // );
-
-        // this.mousePixel = new Position(
-        //     Math.floor(this.mouse.x / Config.editorPixelSize),
-        //     Math.floor(this.mouse.y / Config.editorPixelSize));
-
-        // this.mousePixelId = this.mousePixel.y * Config.pixelsPerRow + this.mousePixel.x;
-
-        // this.mouseTile = new Position( //???
-        //     Math.floor(this.mouseCamera.x / Config.pixelsPerRow),
-        //     Math.floor(this.mouseCamera.y / Config.pixelsPerRow)
-        // );
-
-        // this.mouseTileId = this.mouseTile.y * Config.tilesPerRow + this.mouseTile.x;
-
-        // this.isMouseOnTiles =
-        //     this.mouseTile.x >= 0 && this.mouseTile.x < Config.tilesPerRow &&
-        //     this.mouseTile.y >= 0 && this.mouseTile.y < Config.tilesPerRow;
-
-    }
-    onMouseClick(evt: any) {
-        this.isMouseClicked = true;
-    }
-    onMouseDown(evt: any) {
-        this.isMouseDown = true;
     }
     //KEYS
     onKeyDown(evt: any) {
@@ -163,16 +145,10 @@ export default class Input {
     onKeyUp(evt: any) {
         if (!this.isTyping) {
 
-            if (evt.key == "a" || evt.key == "ArrowLeft") {
+            if (evt.key == "a" || evt.key == "ArrowLeft" || evt.key == "d" || evt.key == "ArrowRight") {
                 this.direction.x = 0;
             }
-            if (evt.key == "w" || evt.key == "ArrowUp") {
-                this.direction.y = 0;
-            }
-            if (evt.key == "d" || evt.key == "ArrowRight") {
-                this.direction.x = 0;
-            }
-            if (evt.key == "s" || evt.key == "ArrowDown") {
+            if (evt.key == "w" || evt.key == "ArrowUp" || evt.key == "s" || evt.key == "ArrowDown") {
                 this.direction.y = 0;
             }
         }

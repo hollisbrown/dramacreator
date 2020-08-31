@@ -11,7 +11,7 @@ export default class Item {
     containerSlot: number;
 
     constructor(
-        id: number,
+        id: number = 0,
         assetId: number = 0,
         frameId: number = 0,
         position: Position = new Position,
@@ -26,5 +26,4 @@ export default class Item {
         this.containerId = containerId;
         this.containerSlot = containerSlot;
     }
-
 }

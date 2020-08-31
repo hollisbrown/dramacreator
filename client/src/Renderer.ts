@@ -1,10 +1,11 @@
 import Camera from './Camera';
+import Sprite from '../../common/src/Sprite';
 import Position from '../../common/src/Position';
 import Config from '../../common/src/Config';
+import Game from '../../common/src/Game';
 import Asset, { AssetType } from '../../common/src/Asset';
 import Tile from '../../common/src/Tile';
 import Item from '../../common/src/Item';
-import Game from '../../common/src/Game';
 import Character from '../../common/src/Character';
 
 interface ISortable {
@@ -21,6 +22,9 @@ export default class Renderer {
     bufferCtx: any[] = [];
     renderStack: ISortable[] = [];
 
+    spritesToRenderWall: boolean[] = [];
+    spritesToRenderCharacter: number[] = [];
+
     constructor(canvas: any, ctx: any, camera: Camera) {
 
         this.canvas = canvas;
@@ -28,35 +32,25 @@ export default class Renderer {
         this.camera = camera;
 
         for (var i = 0; i < Config.maxAssets; i++) {
-            var canv = document.createElement("canvas");
+            let canv = document.createElement("canvas");
             canv.width = Config.pixelsPerRow * Config.maxFrames;
             canv.height = Config.pixelsPerRow;
             this.bufferCanvas.push(canv);
 
-            var context = canv.getContext("2d");
+            let context = canv.getContext("2d");
             context.imageSmoothingEnabled = false;
             this.bufferCtx.push(context);
         }
     }
-    createSprites(assets: Asset[]) {
-        for (var i = 0; i < Config.maxAssets; i++) {
-            this.renderImageToContext(assets[i].image, this.bufferCtx[i], 0, 1);
-        }
+    createSprites(asset: Asset) {
 
-        // for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
-        //     spritesToRenderWall.push(0);
-        // }
-        // for (var i = 0; i < Config.maxCharacters; i++) {
-        //     spritesToRenderCharacter.push(0);
-        // }
+        asset.sprite.render(this.bufferCtx[asset.id], Config.colorSet, 0, 1);
     }
     update(characterLerp: number, game: Game) {
-
         this.renderStack = [];
-
         //Add characters to render stack
         for (var i = 0; i < game.characters.length; i++) {
-            let character = Object.assign(new Character(i),game.characters[i]);
+            let character = Object.assign(new Character(i), game.characters[i]);
             character.lerp(characterLerp);
             this.renderStack.push(character);
         }
@@ -67,7 +61,7 @@ export default class Renderer {
             if (game.items[i].containerId != 0) {
                 return;
             }
-            let item = Object.assign(new Item(i),game.items[i]);
+            let item = Object.assign(new Item(i), game.items[i]);
             this.renderStack.push(item);
         }
 
@@ -75,6 +69,11 @@ export default class Renderer {
         this.renderStack.sort(function (a, b) { return a.positionRender.x - b.positionRender.y });
 
         //DRAW STUFF
+
+        //bg
+        this.ctx.fillStyle = "#000000";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(this.camera.position.x, this.camera.position.y);
         //DRAW BACKGROUND (Tiles)
@@ -112,13 +111,13 @@ export default class Renderer {
             }
             this.ctx.drawImage(
                 this.bufferCanvas[this.renderStack[i].assetId],
-                spriteId * Config.pixelsPerRow, 
-                0, 
-                Config.pixelsPerRow, 
+                spriteId * Config.pixelsPerRow,
+                0,
                 Config.pixelsPerRow,
-                this.renderStack[i].positionRender.x, 
-                this.renderStack[i].positionRender.y, 
-                Config.pixelsPerRow, 
+                Config.pixelsPerRow,
+                this.renderStack[i].positionRender.x,
+                this.renderStack[i].positionRender.y,
+                Config.pixelsPerRow,
                 Config.pixelsPerRow
             );
 
@@ -142,20 +141,6 @@ export default class Renderer {
         // }
         this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
         this.ctx.scale(1 / this.camera.zoom, 1 / this.camera.zoom);
-    }
-    renderImageToContext(image: Uint8Array, context: any, frame: number, pixelSize: number) {
-
-        for (var i = 0; i < Config.pixelsPerImage; i++) {
-            var x = i % Config.pixelsPerRow + (frame * Config.pixelsPerRow);
-            var y = Math.floor(i / Config.pixelsPerRow);
-            var color: number = image[i];
-            if (color < 0 || color >= Config.colorSet.length) {
-                context.fillStyle = "rgba(0, 0, 0, 0)";
-            } else {
-                context.fillStyle = Config.colorSet[color];
-            }
-            context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-        }
     }
     debugShowSprites() {
 
