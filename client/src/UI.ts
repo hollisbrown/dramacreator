@@ -73,12 +73,12 @@ export default class UI {
         width: number,
         height: number,
         color: string
-        ) {
+    ) {
 
-            this.ctx.fillStyle = color;
-            this.ctx.fillRect(x, y, width, height);
-            this.ctx.drawImage(
-                bufferCanvas,
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(x, y, width, height);
+        this.ctx.drawImage(
+            bufferCanvas,
             0,
             0,
             Config.pixelsPerRow,
@@ -203,18 +203,7 @@ export default class UI {
         this.ctx.textAlign = "left";
         this.ctx.fillStyle = "#000000";
 
-        if (input.isTyping) {
-            var lines = this.getTextLines(input.typedString, Math.floor(width / 10));
-
-            if (this.cursorTimer < 0.5) {
-                lines[lines.length - 1] += "|";
-            } else {
-                lines[lines.length - 1] += " ";
-            }
-        } else {
-            var lines = this.getTextLines(text, Math.floor(width / 10));
-        }
-
+        var lines = this.getTextLines(text, Math.floor(width / 10));
         for (var i = 0; i < lines.length; i++) {
             this.ctx.fillText(lines[i], x + 12, y + 20 + (i * 20));
         }
@@ -233,6 +222,46 @@ export default class UI {
             }
         }
 
+    }
+    textBoxActive(
+        input: Input,
+        text: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+    ) {
+
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.fillRect(x, y, width, height);
+
+        this.ctx.font = "600 15px Courier New";
+        this.ctx.textAlign = "left";
+        this.ctx.fillStyle = "#000000";
+
+        var lines = this.getTextLines(input.typedString, Math.floor(width / 10));
+
+        if (this.cursorTimer < 0.5) {
+            lines[lines.length - 1] += "|";
+        } else {
+            lines[lines.length - 1] += " ";
+        }
+
+        for (var i = 0; i < lines.length; i++) {
+            this.ctx.fillText(lines[i], x + 12, y + 20 + (i * 20));
+        }
+
+        var isHovered =
+            input.mouse.x > x &&
+            input.mouse.x < x + width &&
+            input.mouse.y > y &&
+            input.mouse.y < y + height;
+
+        if (!isHovered) { //click outside
+            this.ctx.strokeStyle = "#000000";
+            this.ctx.strokeRect(x, y, width, height);
+            return input.isMouseClicked;
+        }
     }
     getTextLines(text: string, maxCharactersPerLine: number) {
 

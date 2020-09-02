@@ -20,13 +20,16 @@ export default class Editor {
     isGridVisible: boolean = true;
     isMouseOnSprite: boolean;
     isTranslatingPixels: boolean = false;
+    isTypingName: boolean = false;
+    isTypingDescription: boolean = false;
+
     selectedColor: number = 1;
     selectedTool: number = 0;
     selectedType: number = 0;
 
     asset: Asset;
     editorAssetTypes = ["None", "Floor", "Wall", "Item", "Character"];
-    onBuild: (type: string, data: any) => void;
+    onBuild: (type: string, data: any) => void; //callback function
 
     constructor(
         canvas: any,
@@ -52,7 +55,6 @@ export default class Editor {
         this.paint();
         this.translate();
     }
-
     paint() {
         this.isMouseOnSprite =
             this.input.mouse.x >= 0 &&
@@ -103,7 +105,6 @@ export default class Editor {
             Config.editorPixelSize,
             Config.editorPixelSize);
     }
-
     translate() {
         let x = this.input.direction.x;
         let y = this.input.direction.y;
@@ -118,7 +119,6 @@ export default class Editor {
             this.isTranslatingPixels = false;
         }
     }
-
     swatches(startX: number, startY: number, padding: number, width: number, height: number) {
         var x;
         var y;
@@ -135,7 +135,6 @@ export default class Editor {
 
             if (this.ui.swatch(this.input, x, y, width, height, Config.colorSet[i])) {
                 this.selectedColor = i;
-                this.input.stopTyping();
             }
 
             //selection visualisation
@@ -167,7 +166,6 @@ export default class Editor {
 
             if (this.ui.button(this.input, this.toolSet[i], x, y, width, height, "#333333")) {
                 this.selectedTool = i;
-                this.input.stopTyping();
             }
 
             if (i == this.selectedTool) {
@@ -199,14 +197,35 @@ export default class Editor {
         }
     }
     properties(startX: number, startY: number, padding: number, width: number, height: number) {
-        if (this.ui.textBox(this.input, this.asset.name, startX, startY + 200, width, 60)) {
-            this.input.stopTyping();
-            this.input.startTyping(this.asset.name);
+
+        if (this.isTypingName) {
+
+            this.asset.name = this.input.typedString;
+            
+            if (this.ui.textBoxActive(this.input, this.input.typedString, startX, startY + 200, width, 60)) {
+                this.input.stopTyping();
+                this.isTypingName = false;
+            }
+        } else {
+            if (this.ui.textBox(this.input, this.asset.name, startX, startY + 200, width, 60)) {
+                this.input.startTyping(this.asset.name);
+                this.isTypingName = true;
+            }
         }
 
-        if (this.ui.textBox(this.input, this.asset.description, startX, startY + 280, width, 120)) {
-            this.input.stopTyping();
-            this.input.startTyping(this.asset.description);
+        if (this.isTypingDescription) {
+
+            this.asset.description = this.input.typedString;
+
+            if (this.ui.textBoxActive(this.input, this.input.typedString, startX, startY + 280, width, 120)) {
+                this.input.stopTyping();
+                this.isTypingDescription = false;
+            }
+        } else {
+            if (this.ui.textBox(this.input, this.asset.description, startX, startY + 280, width, 120)) {
+                this.input.startTyping(this.asset.description);
+                this.isTypingDescription = true;
+            }
         }
 
         var dropDownSelection = this.ui.dropDown(this.input, this.editorAssetTypes, this.asset.type, startX, startY, 80, 30, "#777777");
@@ -220,7 +239,6 @@ export default class Editor {
         this.isEnabled = true;
     }
     save() {
-        //this.input.stopTyping();
         this.onBuild("ASSET", this.asset);
         this.isEnabled = false;
     }

@@ -1,4 +1,3 @@
-
 import Position from '../../common/src/Position';
 import Config from '../../common/src/Config';
 import Game from '../../common/src/Game';
@@ -12,6 +11,7 @@ import Renderer from './Renderer';
 import Camera from './Camera';
 import Editor from './Editor';
 import Sprite from '../../common/src/Sprite';
+
 
 export default class Builder {
 
@@ -30,11 +30,12 @@ export default class Builder {
     builderPadding: number = 6;
 
     editor: Editor;
-    // selectedTileId: number = -1;
-    // selectedItemId: number = -1;
-    // selectedCharacterId: number = -1;
+    hasAsset: boolean = false;
+    hasPicked: boolean = false;
     selectedAssetId: number = -1;
     selectedAsset: Asset;
+    selectedObjectId: number = -1;
+    selectedObjectType: AssetType = AssetType.NONE;
     onBuild: (type: string, data: any) => void;
 
     constructor(
@@ -66,40 +67,32 @@ export default class Builder {
         this.background();
         this.mouse();
         this.scroll();
-        this.cursor();
         this.filter();
         this.assetList();
     }
     mouse() {
-        if (this.input.isMouseClicked) {
+        if (this.input.isMouseUp && this.input.isMouseRight) {
+            this.selectedAssetId = -1;
+            this.hasAsset = false;
+            this.hasPicked = false;
+            this.renderer.drop();
+            return;
+        }
 
-            if (this.selectedAssetId != -1) {
-                //Build new
-                this.selectedAsset = this.game.assets[this.selectedAssetId];
-                let position = new Position();
-                switch (this.selectedAsset.type) {
-                    case AssetType.WALL:
-                    case AssetType.FLOOR:
-                        let tileId = this.input.mouseTileId(this.camera.position, this.camera.zoom);
-                        let tile = new Tile(tileId, this.selectedAssetId);
-                        this.onBuild("TILE", tile);
-                        break;
-                    case AssetType.ITEM:
-                        position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
-                        let item = new Item(-1, this.selectedAssetId, 0, position, 0, 0);
-                        this.onBuild("ITEM", item);
-                        break;
-                    case AssetType.CHARACTER:
-                        position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
-                        let character = new Character(0, this.selectedAssetId, 0, position);
-                        this.onBuild("CHARACTER", character);
-                        break;
-                }
+        if (this.input.isMouseClicked) {
+            if (this.hasAsset) {
+                this.build();
+            } else if (this.hasPicked) {
+                this.drop();
             } else {
-                //set existing?
-                //select?
+                this.pick();
             }
         }
+
+        if (this.hasAsset){
+            this.cursorTile();
+        }
+
     }
     scroll() {
 
@@ -139,18 +132,19 @@ export default class Builder {
             let asset = this.game.assets[i];
             let x = this.builderListX;
             let y = this.builderListY + i * (this.builderHeight + this.builderPadding);
+
             if (this.ui.asset(this.input, this.renderer.bufferCanvas[i], asset.name, x, y, this.builderWidth, this.builderHeight, "#111111")) {
                 this.selectedAssetId = i;
+                this.hasAsset = true;
             }
 
             if (this.ui.button(this.input, "E", x + 240, y + 10, 30, 30, "#1f1f1f")) {
                 this.editor.load(asset);
             }
-            1
+
             if (this.ui.button(this.input, "C", x + 280, y + 10, 30, 30, "#1f1f1f")) {
-                asset.id = -1;
-                asset.name = "Copy of " + asset.name;
-                this.editor.load(asset);
+                let newAsset = new Asset(-1, AssetType.NONE, "Copy of " + asset.name, asset.description);
+                this.editor.load(newAsset);
             }
 
             if (this.selectedAssetId == i) {
@@ -160,7 +154,7 @@ export default class Builder {
             }
         }
     }
-    cursor() {
+    cursorTile() {
         if (!this.input.isMouseOnTiles) {
             return;
         }
@@ -171,6 +165,71 @@ export default class Builder {
 
         this.ctx.fillStyle = "rgba(255,255,255,0.1)";
         this.ctx.fillRect(cursorX, cursorY, size, size);
+    }
+    cursorObject() {
+        //TODO: interface?
+    }
+    build() {
+        this.selectedAsset = this.game.assets[this.selectedAssetId];
+        let position = new Position();
+        switch (this.selectedAsset.type) {
+            case AssetType.WALL:
+            case AssetType.FLOOR:
+                let tileId = this.input.mouseTileId(this.camera.position, this.camera.zoom);
+                let tile = new Tile(tileId, this.selectedAssetId);
+                this.onBuild("TILE", tile);
+                break;
+            case AssetType.ITEM:
+                position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
+                let item = new Item(-1, this.selectedAssetId, 0, position, 0, 0);
+                this.onBuild("ITEM", item);
+                break;
+            case AssetType.CHARACTER:
+                position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
+                let character = new Character(-1, this.selectedAssetId, 0, position);
+                this.onBuild("CHARACTER", character);
+                break;
+        }
+    }
+    pick() {
+        let mouseCam = this.input.mouseCamera(this.camera.position, this.camera.zoom);
+        let selection = this.renderer.getSpriteAtPosition(mouseCam);
+
+        this.selectedObjectType = this.game.assets[selection[0]].type;
+        this.selectedObjectId = selection[1];
+
+        console.log("picked: " + selection);
+
+        if (this.selectedObjectId != -1) {
+            this.renderer.pick();
+            this.hasAsset = false;
+            this.hasPicked = true;
+        }
+    }
+    drop() {
+        console.log("id:" + this.selectedObjectId);
+        this.renderer.drop();
+        let position: Position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
+        switch (this.selectedObjectType) {
+            case AssetType.ITEM:
+                let item = this.game.items[this.selectedObjectId];
+                item.position = position;
+                item.positionRender = position;
+                this.onBuild("ITEM", item);
+                break;
+            case AssetType.CHARACTER:
+                let character = this.game.characters[this.selectedObjectId];
+                character.position = position;
+                character.positionRender = position;
+                character.positionLast = position;
+                this.onBuild("CHARACTER", character);
+                break;
+        }
+
+        this.selectedObjectType = AssetType.NONE;
+        this.selectedObjectId = -1;
+        this.hasAsset = false;
+        this.hasPicked = false;
     }
 }
 

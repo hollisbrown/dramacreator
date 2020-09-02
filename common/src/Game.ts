@@ -26,19 +26,23 @@ export default class Game {
             let asset = new Asset(i, AssetType.NONE, "Unnamed " + i, "Nothing to see here.", sprite);
             this.assets.push(asset);
         }
+
+        this.assets[1].type = AssetType.FLOOR;
+        this.assets[2].type = AssetType.ITEM;
+        this.assets[3].type = AssetType.CHARACTER;
+
         for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
             let tile = new Tile(i, 1);
             this.tiles.push(tile);
         }
         for (var i = 0; i < Config.maxItems; i++) {
-            let item = new Item(i, 2, 0, new Position(i * 40, 50));
+            let item = new Item(i, 2, 0, new Position(i * 40, 50 + i * 30));
             this.items.push(item);
         }
         for (var i = 0; i < Config.maxCharacters; i++) {
             let character = new Character(i, 3);
             this.characters.push(character);
         }
-
         this.isRunning = true;
     }
     load(data: Game) {
@@ -70,8 +74,15 @@ export default class Game {
         let asset = Object.assign(new Asset(), data);
         asset.sprite = Object.assign(new Sprite(), asset.sprite);
         if (asset.id == -1) {
-            //try to find empty ID
-            //add new at ID
+            //find unused asset Id
+            for (var i = 1; i < this.assets.length; i++) {
+                if (this.assets[i].type == AssetType.NONE) {
+                    asset.id = i;
+                    this.assets[i] = asset;
+                    return i;
+                }
+            }
+            return -1;
         } else {
             this.assets[asset.id] = asset;
         }

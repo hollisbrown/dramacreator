@@ -7,6 +7,7 @@ export default class Input {
 
     isMouseClicked: boolean;
     isMouseDown: boolean;
+    isMouseUp: boolean;
     isMouseRight: boolean;
     isMouseHold: boolean;
     isMouseOnUi: boolean;
@@ -16,17 +17,15 @@ export default class Input {
     direction: Position;
     typedString: string;
     isTyping: boolean;
-
+    isEnter : boolean;
     isShortcutFreeMode: boolean;
     isShortcutBuildMode: boolean;
     isShortcutPlayMode: boolean;
 
     constructor(canvas: any) {
         this.canvas = canvas;
-        this.isMouseClicked = false;
         this.mouse = new Position(0, 0);
         this.direction = new Position(0, 0);
-
         document.addEventListener('contextmenu', (evt) => this.onContextMenu(evt));
         document.addEventListener('click', (evt) => this.onMouseClick(evt));
         document.addEventListener('mousedown', (evt) => this.onMouseDown(evt));
@@ -39,6 +38,8 @@ export default class Input {
     reset() {
         this.isMouseClicked = false;
         this.isMouseDown = false;
+        this.isMouseUp = false;
+        this.isEnter = false;
         this.isShortcutBuildMode = false;
         this.isShortcutPlayMode = false;
         this.isShortcutFreeMode = false;
@@ -50,25 +51,19 @@ export default class Input {
     }
     onContextMenu(evt: any) { //default right click
         evt.preventDefault();
+        this.isMouseRight = true;
     }
     onMouseClick(evt: any) {
         this.isMouseClicked = true;
-        if (evt.button == 2) {
-            this.isMouseRight = true;
-        } else {
-            this.isMouseRight = false;
-        }
+        this.isMouseRight = (evt.button == 2);
     }
     onMouseDown(evt: any) {
         this.isMouseDown = true;
         this.isMouseHold = true;
-        if (evt.button == 2) {
-            this.isMouseRight = true;
-        } else {
-            this.isMouseRight = false;
-        }
+        this.isMouseRight = (evt.button == 2);
     }
     onMouseUp(evt: any) {
+        this.isMouseUp = true;
         this.isMouseHold = false;
         this.isMouseRight = false;
     }
@@ -166,7 +161,7 @@ export default class Input {
                     break;
 
                 case 13: //enter
-                    this.stopTyping();
+                    this.isEnter = true;
                     break;
             }
         }

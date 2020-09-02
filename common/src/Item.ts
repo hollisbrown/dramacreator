@@ -9,6 +9,7 @@ export default class Item {
     positionRender: Position;
     containerId: number;
     containerSlot: number;
+    offset: Position;
 
     constructor(
         id: number = 0,
@@ -25,5 +26,6 @@ export default class Item {
         this.positionRender = position;
         this.containerId = containerId;
         this.containerSlot = containerSlot;
+        this.offset = new Position(16,32);
     }
 }

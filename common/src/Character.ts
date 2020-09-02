@@ -6,10 +6,11 @@ export default class Character {
     assetId: number;
     frameId: number;
     position: Position;
+    positionRender: Position;
     positionLast: Position;
     positionTarget: Position;
-    positionRender: Position;
     bufferCanvas: OffscreenCanvas;
+    offset: Position;
 
     constructor(
         id: number = 0,
@@ -23,12 +24,11 @@ export default class Character {
         this.positionLast = position;
         this.positionRender = position;
         this.positionTarget = position;
+        this.offset = new Position(16,32);
     }
 
     lerp(amount: number) {
-        let x = this.position.x;
-        let y = this.position.y;
-        this.positionRender.x = (1 - amount) * x + amount * this.positionTarget.x;
-        this.positionRender.y = (1 - amount) * y + amount * this.positionTarget.y;
+        this.positionRender.x = (1 - amount) * this.position.x + amount * this.positionTarget.x;
+        this.positionRender.y = (1 - amount) * this.position.y + amount * this.positionTarget.y;
     }
 }
