@@ -8,13 +8,14 @@ import Tile from '../../common/src/Tile';
 import Item from '../../common/src/Item';
 import Character from '../../common/src/Character';
 
-interface ISortable {
+export interface ISortable {
     id: number;
     positionRender: Position;
     offset: Position;
     assetId: number;
     frameId: number;
 }
+
 export default class Renderer {
 
     camera: Camera;
@@ -24,7 +25,7 @@ export default class Renderer {
     bufferCtx: any[] = [];
     renderStack: ISortable[] = [];
 
-    hoveredSortable : number = -1;
+    hoveredSortable: number = -1;
     pickedSortable: number = -1;
 
     //spritesToRenderWall: boolean[] = [];
@@ -48,7 +49,7 @@ export default class Renderer {
         }
     }
     createSprites(asset: Asset) {
-
+        this.bufferCtx[asset.id].clearRect(0, 0, this.bufferCanvas[asset.id].width, this.bufferCanvas[asset.id].height)
         asset.sprite.render(this.bufferCtx[asset.id], Config.colorSet, 0, 1);
     }
     update(characterLerp: number, game: Game) {
@@ -168,28 +169,27 @@ export default class Renderer {
             this.ctx.drawImage(this.bufferCanvas[i], x * (32 + 4), y * (32 + 4));
         }
     }
-    getSpriteAtPosition(position: Position): number[] {
-        for (var i = this.renderStack.length - 1; i > 0; i--) {
-            let positionRender = this.renderStack[i].positionRender;
+    getSortableAtPosition(position: Position): ISortable {
+        for (var i = this.renderStack.length - 1; i >= 0; i--) {
+            let pos = this.renderStack[i].positionRender;
             let offset = this.renderStack[i].offset;
             if (
-                position.x > positionRender.x - offset.x &&
-                position.x < positionRender.x + offset.x &&
-                position.y > positionRender.y - offset.y &&
-                position.y < positionRender.y
+                position.x > pos.x - offset.x &&
+                position.x < pos.x + offset.x &&
+                position.y > pos.y - offset.y &&
+                position.y < pos.y
             ) {
                 this.hoveredSortable = i;
-                return [this.renderStack[i].assetId, this.renderStack[i].id];
+                return this.renderStack[i];
             }
         }
         this.hoveredSortable = -1;
-        return [0, -1];
+        return null;
     }
-    pick(){
+    showPick() {
         this.pickedSortable = this.hoveredSortable;
     }
-
-    drop(){
+    showDrop() {
         this.pickedSortable = -1;
         this.hoveredSortable = -1;
     }

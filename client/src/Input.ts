@@ -17,7 +17,7 @@ export default class Input {
     direction: Position;
     typedString: string;
     isTyping: boolean;
-    isEnter : boolean;
+    isEnter: boolean;
     isShortcutFreeMode: boolean;
     isShortcutBuildMode: boolean;
     isShortcutPlayMode: boolean;
@@ -92,10 +92,6 @@ export default class Input {
     mouseTileId(cameraPosition: Position, cameraZoom: number): number {
         let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
         return mouseTile.y * Config.tilesPerRow + mouseTile.x;
-    }
-    isMouseOnTiles(cameraPosition: Position, cameraZoom: number): boolean {
-        let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
-        return (mouseTile.x >= 0 && mouseTile.x < Config.tilesPerRow && mouseTile.y >= 0 && mouseTile.y < Config.tilesPerRow);
     }
     onMouseMove(evt: any) {
         let canvasRect = this.canvas.getBoundingClientRect();

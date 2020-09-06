@@ -1,4 +1,5 @@
 require('source-map-support').install();
+const fs = require('fs');
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -15,6 +16,7 @@ import Asset from '../../common/src/Asset';
 
 var players: Player[] = [];
 var game: Game = new Game();
+var file: string = './savegame/save.json';
 
 start();
 
@@ -23,7 +25,27 @@ function start() {
     webSocketServer.on("connection", connect);
     server.listen(port, function () { console.log("server is listening"); });
 
-    game.create();
+    loadFromFile();
+}
+function saveToFile() {
+    let data = JSON.stringify(game);
+    fs.writeFile(file, data, (err: any) => {
+        if (err) throw err;
+        console.log('game saved');
+    });
+}
+function loadFromFile() {
+    fs.access(file, fs.constants.F_OK | fs.constants.R_OK, (err: any) => {
+        if (err) {
+            game.create();
+            console.log('no game data found. Creating new');
+        } else {
+            let dataJSON = fs.readFileSync(file);
+            let data = JSON.parse(dataJSON);
+            game.load(data);
+            console.log('game data found. Loading from file');
+        }
+    });
 }
 function connect(socket: any) {
 
@@ -43,6 +65,7 @@ function addPlayer(socket: any) {
     socket.send(JSON.stringify(message));
 }
 function removePlayer(socket: any) {
+    saveToFile();
     for (var i = 0; i < players.length; i++) {
         if (players[i].socket == socket) {
             players.splice(i, 1);

@@ -86,7 +86,6 @@ export default class Editor {
                     let currentColor = this.asset.sprite.getPixel(mousePixel.x, mousePixel.y);
                     this.asset.sprite.addPixelsToList(pixelList, mousePixel.x, mousePixel.y, currentColor);
 
-                    console.log(pixelList);
                     if (this.input.isMouseRight) {
                         this.asset.sprite.setPixelArray(pixelList, 0);
                     } else {
@@ -201,7 +200,7 @@ export default class Editor {
         if (this.isTypingName) {
 
             this.asset.name = this.input.typedString;
-            
+
             if (this.ui.textBoxActive(this.input, this.input.typedString, startX, startY + 200, width, 60)) {
                 this.input.stopTyping();
                 this.isTypingName = false;
@@ -255,7 +254,7 @@ export default class Editor {
             return;
         }
 
-        this.ctx.strokeStyle = "rgba(200,200,200,0.1)";
+        this.ctx.strokeStyle = "rgba(200,200,200,0.2)";
         this.ctx.beginPath();
 
         for (var i = 0; i < Config.pixelsPerRow; i++) {

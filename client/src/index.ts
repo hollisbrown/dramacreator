@@ -95,7 +95,6 @@ function update(timestamp: number) {
     }
 
     renderer.update(0, game);
-
     switch (mode) {
         case Mode.FREE:
             updateFree(deltaTime);

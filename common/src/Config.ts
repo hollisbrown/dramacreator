@@ -1,21 +1,21 @@
 export default class Config {
 
-    static maxPlayers: number = 4;
-    static maxAssets: number = 8;
-    static maxItems: number = 4;
-    static maxCharacters: number = 4;
+    static maxPlayers: number = 8;
+    static maxAssets: number = 32;
+    static maxItems: number = 32;
+    static maxCharacters: number = 8;
     static maxNameLength: number = 32;
     static maxDescriptonLength: number = 128;
     static maxFrames = 8;
-    static tilesPerRow: number = 32;
+    static tilesPerRow: number = 8;
     static editorPixelSize = 24;
     static pixelsPerRow: number = 32;
     static pixelsPerImage: number = 1024;
     static characterSpeed: number = 12;
-    static camSpeed : number = 500;
+    static camSpeed: number = 500;
     static fastFramesPerSecond: number = 2;
     static colorSet: string[] = [
-        "rgba(0,0,0,0)",
+        "rgba(0,0,0,0.0)",
         "#b55088", "#f6757a", "#e8b796", "#c28572",
         "#a86c52", "#d77643", "#733e39", "#3e2731",
         "#c0240a", "#9b2233", "#ff0044", "#e43b44",

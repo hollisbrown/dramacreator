@@ -6,12 +6,11 @@ export default class Sprite {
 
     constructor(
         id: number = 0,
-        width: number = 0,
-        pixels: Uint8Array = new Uint8Array(width * width)
+        width: number = 0
     ) {
         this.id = id;
         this.width = width;
-        this.pixels = pixels;
+        this.pixels = new Uint8Array(this.width * this.width);
     }
 
     render(context: any, colorSet: string[], frame: number, pixelSize: number) {
@@ -20,7 +19,7 @@ export default class Sprite {
             let y = Math.floor(i / this.width);
             let colorId = this.pixels[i];
             if (colorId < 0 || colorId >= colorSet.length) {
-                context.fillStyle = "rgba(0, 0, 0, 0)";
+                context.fillStyle = colorSet[0];
             } else {
                 context.fillStyle = colorSet[colorId];
             }
@@ -42,7 +41,7 @@ export default class Sprite {
         }
     }
     getPixel(x: number, y: number): number {
-        let id  = (y * this.width) + x;
+        let id = (y * this.width) + x;
         return this.pixels[id];
     }
     getPixelsCropped(topX: number, topY: number, bottomX: number, bottomY: number): Uint8Array {
@@ -57,8 +56,8 @@ export default class Sprite {
         return croppedImage;
     }
     getPixelsTranslated(x: number, y: number): Uint8Array {
-        let translatedImage = new Uint8Array(this.width*this.width);
-        console.log("x:"+x+" y:"+y+ " image before: "+translatedImage.length);
+        let translatedImage = new Uint8Array(this.width * this.width);
+        console.log("x:" + x + " y:" + y + " image before: " + translatedImage.length);
         for (var i = 0; i < translatedImage.length; i++) {
 
             let currentX = i % this.width;
@@ -81,7 +80,7 @@ export default class Sprite {
             let index = newY * this.width + newX;
             translatedImage[i] = this.pixels[index];
         }
-        console.log("image after: "+translatedImage.length);
+        console.log("image after: " + translatedImage.length);
         return translatedImage;
     }
     getPixelsCombined(pixels: Uint8Array[]): Uint8Array {
