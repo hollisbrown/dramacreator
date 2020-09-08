@@ -12,9 +12,10 @@ import Config from '../../common/src/Config';
 import Player from './player';
 import Position from '../../common/src/Position';
 import Game from '../../common/src/Game';
-import Asset from '../../common/src/Asset';
+import Asset, { AssetType } from '../../common/src/Asset';
 
 var players: Player[] = [];
+var lastUniqueId: number = 0;
 var game: Game = new Game();
 var file: string = './savegame/save.json';
 
@@ -48,14 +49,14 @@ function loadFromFile() {
     });
 }
 function connect(socket: any) {
-
     addPlayer(socket);
-    socket.on("close", function close(evt: any) { removePlayer(socket); });
-    socket.on("message", receive);
+    socket.onclose = function close(evt: any) { removePlayer(socket); };
+    socket.onmessage = function message(evt: any) { receive(evt.data, socket) };
 }
 function addPlayer(socket: any) {
     if (players.length < maxConnections) {
-        players.push(new Player(socket));
+        players.push(new Player(socket, lastUniqueId));
+        lastUniqueId++;
         console.log("Player added. Number of players: " + players.length);
     } else {
         console.log("Server full. Number of players: " + players.length)
@@ -74,33 +75,84 @@ function removePlayer(socket: any) {
     }
     console.log("Player removed ");
 }
-function receive(json: string) {
+function receive(json: string, socket: any) {
+
     let object = JSON.parse(json);
     let type: string = object.type;
     let data = object.data;
     let id: number = -1;
-
     switch (type) {
         case "ASSET":
-            id = game.setAsset(data);
+            setAsset(socket, data);
             break;
         case "TILE":
-            id = game.setTile(data);
+            setTile(socket, data);
             break;
         case "ITEM":
-            id = game.setItem(data);
+            setItem(socket, data);
             break;
         case "CHARACTER":
-            id = game.setCharacter(data);
+            setCharacter(socket, data);
+            break;
+        case "CONTROL":
+            setControl(socket, data);
             break;
     }
-
-    if (id != -1) {
-        sendToAll(json);
-    }
 }
-function sendToAll(buffer: string) {
+function send(socket: any, type: string, data: any) {
+    let message = { type, data };
+    let messageJSON = JSON.stringify(message);
+    socket.send(messageJSON);
+}
+function sendToAll(type: string, data: any) {
+    let message = { type, data };
+    let messageJSON = JSON.stringify(message);
     for (var i = 0; i < players.length; i++) {
-        players[i].socket.send(buffer);
+        players[i].socket.send(messageJSON);
     }
 }
+function getPlayerId(socket: any): number {
+    for (var i = 0; i < players.length; i++) {
+        if (players[i].socket == socket) {
+            return i;
+        }
+    }
+    return -1; //socket not registered
+}
+function setAsset(socket: any, data: any) {
+
+    let asset = game.setAsset(data);
+    if (asset.id != -1) {
+        sendToAll("ASSET", data);
+    }
+}
+function setTile(socket: any, data: any) {
+    let tile = game.setTile(data);
+    if (tile.id != -1) {
+        sendToAll("TILE", data);
+    }
+}
+function setItem(socket: any, data: any) {
+    let item = game.setItem(data);
+    if (item.id != -1) {
+        sendToAll("ITEM", item);
+    }
+}
+function setCharacter(socket: any, data: any) {
+    let character = game.setCharacter(data);
+    if (character.id != -1) {
+        sendToAll("CHARACTER", data);
+    }
+}
+function setControl(socket: any, data: any): boolean {
+    let receivedCharacterId = parseInt(data);
+    for (var i = 0; i < players.length; i++) {
+        if (players[i].characterId == receivedCharacterId) {
+            return false;
+        }
+    }
+    players[getPlayerId(socket)].characterId = receivedCharacterId;
+    send(socket, "CONTROL", receivedCharacterId);
+    return true;
+}
+

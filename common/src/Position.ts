@@ -13,13 +13,13 @@ export default class Position {
     }
     normalized(): Position {
         let mag = this.magnitude();
-        if(mag>0){
+        if (mag > 0) {
             return new Position(
                 this.x / mag,
                 this.y / mag
             );
         }
-        return new Position(0,0);
+        return new Position(0, 0);
     }
     distance(other: Position): number {
         let dx = other.x - this.x;

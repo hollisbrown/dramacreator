@@ -4,24 +4,47 @@ import Config from '../../common/src/Config';
 export default class Camera {
     position: Position;
     zoom: number;
-    canvas: any;
+    canvas: HTMLCanvasElement;
 
-    constructor(canvas: any) {
-        this.position = new Position();
+    constructor(canvas: HTMLCanvasElement) {
+        this.position = new Position(0, 0);
         this.zoom = 2;
         this.canvas = canvas;
     }
-    move(direction: Position, deltaTime: number) {
-        let positionDelta = Object.assign(new Position(), direction);
-        positionDelta = positionDelta.normalized();
-        positionDelta = positionDelta.multiply(Config.camSpeed * deltaTime);
-        this.position = this.position.add(positionDelta);
+
+    movePosition(direction: Position, deltaTime: number) {
+        direction = direction.normalized();
+        direction = direction.multiply((Config.camSpeed / this.zoom) * deltaTime);
+        this.position = this.position.add(direction);
     }
-    follow(characterPosition: Position) {
-        let newPosition = Object.assign(new Position(), characterPosition);
-        newPosition.x += this.canvas.width / (2 * this.zoom);
-        newPosition.y += this.canvas.height / (2 * this.zoom);
+
+    setPosition(position: Position) {
+        let newPosition = new Position(position.x, position.y);
+        newPosition.x -= this.canvas.width / (2 * this.zoom);
+        newPosition.y -= this.canvas.height / (2 * this.zoom);
         this.position = newPosition;
+    }
+
+    setZoom(scroll: number) {
+        if (scroll < 0 && this.zoom < 8) {
+            this.zoom = Math.floor(this.zoom * 2);
+        } else if (scroll > 0 && this.zoom > 1) {
+            this.zoom = Math.floor(this.zoom / 2);
+        }
+    }
+
+    getScreenPosition(worldPosition: Position): Position {
+        return new Position(
+            (worldPosition.x - this.position.x) * this.zoom,
+            (worldPosition.y - this.position.y) * this.zoom
+        );
+    }
+
+    getWorldPosition(screenPosition: Position): Position {
+        return new Position(
+            (screenPosition.x / this.zoom) + this.position.x,
+            (screenPosition.y / this.zoom) + this.position.y
+        );
     }
 }
 

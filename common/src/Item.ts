@@ -2,6 +2,7 @@ import Position from "./Position";
 
 export default class Item {
 
+    isUsed: boolean;
     id: number;
     assetId: number;
     frameId: number;
@@ -19,6 +20,7 @@ export default class Item {
         containerId: number = 0,
         containerSlot: number = 0
     ) {
+        this.isUsed = false;
         this.id = id;
         this.frameId = frameId;
         this.assetId = assetId;
@@ -26,6 +28,6 @@ export default class Item {
         this.positionRender = position;
         this.containerId = containerId;
         this.containerSlot = containerSlot;
-        this.offset = new Position(16,32);
+        this.offset = new Position(16, 32);
     }
 }

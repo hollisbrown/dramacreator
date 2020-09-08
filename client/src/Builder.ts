@@ -12,7 +12,6 @@ import Camera from './Camera';
 import Editor from './Editor';
 import Sprite from '../../common/src/Sprite';
 
-
 export default class Builder {
 
     canvas: any;
@@ -23,11 +22,12 @@ export default class Builder {
     renderer: Renderer;
     camera: Camera;
 
-    builderListX: number = 940;
-    builderListY: number = 20;
-    builderWidth: number = 330;
-    builderHeight: number = 52;
-    builderPadding: number = 6;
+    assetList: Asset[];
+    x: number = 940;
+    y: number = 20;
+    width: number = 330;
+    height: number = 52;
+    padding: number = 6;
 
     editor: Editor;
     hasTileSelected: boolean = false;
@@ -35,11 +35,8 @@ export default class Builder {
     hasSortablePicked: boolean = false;
 
     selectedAsset: Asset;
-    selectedSortable: ISortable;
-    newItem: Item;
-    newCharacter: Character;
-
-    onBuild: (type: string, data: any) => void;
+    pickedSortable: ISortable;
+    send: (type: string, data: any) => void;
 
     constructor(
         canvas: any,
@@ -49,7 +46,7 @@ export default class Builder {
         ui: UI,
         renderer: Renderer,
         camera: Camera,
-        onBuild: (type: string, data: any) => void
+        send: (type: string, data: any) => void
     ) {
         this.canvas = canvas;
         this.ctx = ctx;
@@ -59,12 +56,9 @@ export default class Builder {
         this.renderer = renderer;
         this.camera = camera;
 
-        this.editor = new Editor(canvas, ctx, input, ui, onBuild);
-        this.onBuild = onBuild;
-
+        this.editor = new Editor(canvas, ctx, input, ui, send);
+        this.send = send;
         this.selectedAsset = new Asset(-1, AssetType.NONE);
-        this.newItem = new Item(-1, 0, 0, new Position(100, 100), 0, 0);
-        this.newCharacter = new Character(-1, 0, 0, new Position(200, 100));
     }
     update() {
         if (this.editor.isEnabled) {
@@ -73,23 +67,26 @@ export default class Builder {
         }
         this.background();
         this.mouse();
-        this.scroll();
+        this.showAssetList();
         this.filter();
-        this.assetList();
     }
     mouse() {
         //Deselect
         if (this.input.isMouseUp && this.input.isMouseRight) {
-            this.selectedAsset = new Asset(-1, AssetType.NONE);
-            this.hasTileSelected = false;
-            this.hasSortablePicked = false;
-            this.renderer.showDrop();
+            this.reset();
             return;
+        }
+
+        //Delete
+        if (this.input.isShortcutDelete) {
+            if (this.hasSortablePicked) {
+                this.delete();
+            }
         }
 
         //Select / Place
         if (this.input.isMouseClicked) {
-            if (this.hasTileSelected) {
+            if (this.hasTileSelected || this.hasSortableSelected) {
                 this.build();
             } else if (this.hasSortablePicked) {
                 this.drop();
@@ -98,28 +95,14 @@ export default class Builder {
             }
         }
         //Cursor
-        if (this.hasTileSelected) {
-            this.cursorTile();
-        } else if (this.hasSortablePicked) {
-            this.cursorPick();
-        }
-
-    }
-    scroll() {
-        if (this.input.scrollDelta != 0) {
-            this.builderListY -= this.input.scrollDelta;
-            let min = 100;
-            let max = Config.maxAssets * (-this.builderHeight - this.builderPadding) + 400;
-            this.builderListY = Math.max(this.builderListY, max);
-            this.builderListY = Math.min(this.builderListY, min);
-        }
+        this.cursor();
     }
     background() {
 
-        let x: number = this.builderListX;
-        let y: number = this.builderListY;
-        let w: number = this.builderWidth;
-        let h: number = Config.maxAssets * (this.builderHeight + this.builderPadding);
+        let x: number = this.x;
+        let y: number = this.y;
+        let w: number = this.width;
+        let h: number = Config.maxAssets * (this.height + this.padding);
 
         this.ctx.fillStyle = "rgba(0,0,0,0.2)";
         this.ctx.fillRect(x, y, w, h);
@@ -135,39 +118,48 @@ export default class Builder {
         }
     }
     filter() {
+        if (this.ui.button("Filter", this.x, this.y, this.width, this.height, "#333333")) {
 
+        }
     }
-    assetList() {
+    showAssetList() {
+        //Scroll
+        if (this.input.scrollDelta != 0) {
+            this.y -= this.input.scrollDelta;
+            let min = 100;
+            let max = Config.maxAssets * (-this.height - this.padding) + 400;
+            this.y = Math.max(this.y, max);
+            this.y = Math.min(this.y, min);
+        }
+
+        //Draw
         for (var i = 0; i < Config.maxAssets; i++) {
             let asset = this.game.assets[i];
             let img = this.renderer.bufferCanvas[i];
-            let x = this.builderListX;
-            let y = this.builderListY + i * (this.builderHeight + this.builderPadding);
+            let x = this.x;
+            let y = this.y + i * (this.height + this.padding) + 100;
 
-            if (this.ui.asset(this.input, img, asset.name, x, y, this.builderWidth, this.builderHeight, "#111111")) {
+            if (this.ui.asset(img, asset.name, x, y, this.width, this.height, "#111111")) {
 
                 this.selectedAsset = asset;
+
                 switch (this.selectedAsset.type) {
                     case AssetType.WALL:
                     case AssetType.FLOOR:
                         this.hasTileSelected = true;
                         break;
                     case AssetType.ITEM:
-                        this.newItem.assetId = this.selectedAsset.id;
-                        this.hasSortableSelected = true;
                     case AssetType.CHARACTER:
-                        this.newCharacter.assetId = this.selectedAsset.id;
                         this.hasSortableSelected = true;
                         break;
                 }
-                this.hasTileSelected = true;
             }
 
-            if (this.ui.button(this.input, "E", x + 240, y + 10, 30, 30, "#1f1f1f")) {
+            if (this.ui.button("E", x + 240, y + 10, 30, 30, "#1f1f1f")) {
                 this.editor.load(asset);
             }
 
-            if (this.ui.button(this.input, "C", x + 280, y + 10, 30, 30, "#1f1f1f")) {
+            if (this.ui.button("C", x + 280, y + 10, 30, 30, "#1f1f1f")) {
                 let newAsset = new Asset(-1, AssetType.NONE, "Copy of " + asset.name, asset.description);
                 this.editor.load(newAsset);
             }
@@ -175,88 +167,120 @@ export default class Builder {
             if (this.selectedAsset.id == i) {
                 this.ctx.lineWidth = 2;
                 this.ctx.strokeStyle = "#AAAAAA";
-                this.ctx.strokeRect(x, y, this.builderWidth, this.builderHeight);
+                this.ctx.strokeRect(x, y, this.width, this.height);
             }
         }
     }
-    cursorTile() {
-        let position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
-        if (!this.isPositionOnTiles(position)) {
+    cursor() {
+        let img: HTMLCanvasElement;
+        let position: Position;
+        let offset: Position;
+
+        if (this.hasTileSelected) {
+            let worldPosition = this.camera.getWorldPosition(this.input.mouse);
+            let tilePosition = this.getTilePosition(worldPosition);
+            tilePosition = tilePosition.multiply(Config.pixelsPerRow);
+
+            position = this.camera.getScreenPosition(tilePosition);
+            img = this.renderer.bufferCanvas[this.selectedAsset.id];
+            offset = new Position(0, 0);
+
+        } else if (this.hasSortableSelected) {
+            position = this.input.mouse;
+            img = this.renderer.bufferCanvas[this.selectedAsset.id];
+            offset = new Position(16, 32);
+
+        } else if (this.hasSortablePicked) {
+            position = this.input.mouse;
+            img = this.renderer.bufferCanvas[this.pickedSortable.assetId];
+            offset = this.pickedSortable.offset;
+        } else {
             return;
         }
-        let mouseTile = this.input.mouseTile(this.camera.position, this.camera.zoom);
-        let cursorX = ((mouseTile.x * Config.pixelsPerRow) + this.camera.position.x) * this.camera.zoom;
-        let cursorY = ((mouseTile.y * Config.pixelsPerRow) + this.camera.position.y) * this.camera.zoom;
-        let size = Config.pixelsPerRow * this.camera.zoom;
-
-        this.ctx.fillStyle = "rgba(255,255,255,0.1)";
-        this.ctx.fillRect(cursorX, cursorY, size, size);
-    }
-    cursorPick() {
-        let img = this.renderer.bufferCanvas[this.selectedSortable.assetId];
-        let x = this.input.mouse.x - this.selectedSortable.offset.x * this.camera.zoom;
-        let y = this.input.mouse.y - this.selectedSortable.offset.y * this.camera.zoom;
-        let size = this.camera.zoom * Config.pixelsPerRow;
 
         this.ctx.globalAlpha = 0.5;
-        this.ctx.drawImage(img, 0, 0, Config.pixelsPerRow, Config.pixelsPerRow, x, y, size, size);
+        this.ctx.drawImage(
+            img, 0, 0, Config.pixelsPerRow, Config.pixelsPerRow,
+            position.x - offset.x * this.camera.zoom,
+            position.y - offset.y * this.camera.zoom,
+            Config.pixelsPerRow * this.camera.zoom,
+            Config.pixelsPerRow * this.camera.zoom
+        );
         this.ctx.globalAlpha = 1;
     }
     build() {
-        let position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
+        let position = this.camera.getWorldPosition(this.input.mouse);
         if (!this.isPositionOnTiles(position)) {
             return;
         }
-
         switch (this.selectedAsset.type) {
             case AssetType.WALL:
             case AssetType.FLOOR:
                 let tileId = this.input.mouseTileId(this.camera.position, this.camera.zoom);
+                console.log(tileId);
                 let tile = new Tile(tileId, this.selectedAsset.id);
-                this.onBuild("TILE", tile);
+                this.send("TILE", tile);
                 break;
             case AssetType.ITEM:
                 let item = new Item(-1, this.selectedAsset.id, 0, position, 0, 0);
-                this.onBuild("ITEM", item);
+                item.isUsed = true;
+                this.send("ITEM", item);
                 break;
             case AssetType.CHARACTER:
                 let character = new Character(-1, this.selectedAsset.id, 0, position);
-                this.onBuild("CHARACTER", character);
+                character.isUsed = true;
+                this.send("CHARACTER", character);
                 break;
         }
     }
     pick() {
-        let mouseCam = this.input.mouseCamera(this.camera.position, this.camera.zoom);
-        this.selectedSortable = this.renderer.getSortableAtPosition(mouseCam)
-
-        if (this.selectedSortable != null) {
-            this.renderer.showPick();
+        let mouseCam = this.camera.getWorldPosition(this.input.mouse);
+        this.pickedSortable = this.renderer.getSortableAtPosition(mouseCam)
+        if (this.pickedSortable != null) {
             this.hasTileSelected = false;
             this.hasSortablePicked = true;
+            this.renderer.showPick();
         }
     }
     drop() {
-
-        this.renderer.showDrop();
-        let position: Position = this.input.mouseCamera(this.camera.position, this.camera.zoom);
-        let type = this.game.assets[this.selectedSortable.assetId].type;
+        let position = this.camera.getWorldPosition(this.input.mouse);
+        let type = this.game.assets[this.pickedSortable.assetId].type;
         switch (type) {
             case AssetType.ITEM:
-                let item = this.game.items[this.selectedSortable.id];
+                let item = this.game.items[this.pickedSortable.id];
+                item.isUsed = true;
                 item.position = position;
                 item.positionRender = position;
-                this.onBuild("ITEM", item);
+                this.send("ITEM", item);
                 break;
             case AssetType.CHARACTER:
-                let character = this.game.characters[this.selectedSortable.id];
+                let character = this.game.characters[this.pickedSortable.id];
+                character.isUsed = true;
                 character.position = position;
                 character.positionRender = position;
                 character.positionLast = position;
-                this.onBuild("CHARACTER", character);
+                this.send("CHARACTER", character);
                 break;
         }
-        this.hasTileSelected = false;
-        this.hasSortablePicked = false;
+        this.reset();
+    }
+    delete() {
+        let type = this.game.assets[this.pickedSortable.assetId].type;
+        switch (type) {
+            case AssetType.ITEM:
+                this.send("ITEM", new Item(this.pickedSortable.id));
+                break;
+            case AssetType.CHARACTER:
+                this.send("CHARACTER", new Character(this.pickedSortable.id));
+                break;
+        }
+        this.reset();
+    }
+    getTilePosition(position: Position) {
+        return new Position(
+            Math.floor(position.x / Config.pixelsPerRow),
+            Math.floor(position.y / Config.pixelsPerRow)
+        );
     }
     isPositionOnTiles(position: Position): boolean {
         return (
@@ -266,7 +290,13 @@ export default class Builder {
             position.y < Config.tilesPerRow * Config.pixelsPerRow
         )
     }
-
+    reset() {
+        this.selectedAsset = new Asset(-1, AssetType.NONE);
+        this.hasTileSelected = false;
+        this.hasSortableSelected = false;
+        this.hasSortablePicked = false;
+        this.renderer.hidePick();
+    }
 }
 
 

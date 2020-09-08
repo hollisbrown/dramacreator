@@ -69,7 +69,6 @@ export default class Editor {
         let mousePixel = this.input.mousePixel();
         switch (this.selectedTool) {
             case 0://PAINT
-
                 if (this.input.isMouseClicked || this.input.isMouseDown || this.input.isMouseHold) {
                     if (this.input.isMouseRight) {
                         this.asset.sprite.setPixel(mousePixel.x, mousePixel.y, 0);
@@ -80,7 +79,6 @@ export default class Editor {
                 break;
 
             case 1://FILL
-
                 if (this.input.isMouseDown) {
                     let pixelList: number[] = [];
                     let currentColor = this.asset.sprite.getPixel(mousePixel.x, mousePixel.y);
@@ -93,7 +91,6 @@ export default class Editor {
                     }
                 }
                 break;
-
         }
 
         //cursor
@@ -132,7 +129,7 @@ export default class Editor {
                 y = (i - Config.colorSet.length / 2) * (height + padding) + startY;
             }
 
-            if (this.ui.swatch(this.input, x, y, width, height, Config.colorSet[i])) {
+            if (this.ui.swatch(x, y, width, height, Config.colorSet[i])) {
                 this.selectedColor = i;
             }
 
@@ -152,21 +149,17 @@ export default class Editor {
         this.ctx.moveTo(startX, startY);
         this.ctx.lineTo(startX + width, startY + height);
         this.ctx.stroke();
-
     }
     tools(startX: number, startY: number, padding: number, width: number, height: number) {
         var x;
         var y;
-
         for (var i = 0; i < this.toolSet.length; i++) {
-
             x = startX;
             y = i * (height + padding) + startY;
 
-            if (this.ui.button(this.input, this.toolSet[i], x, y, width, height, "#333333")) {
+            if (this.ui.button(this.toolSet[i], x, y, width, height, "#333333")) {
                 this.selectedTool = i;
             }
-
             if (i == this.selectedTool) {
                 //cursor
                 this.ctx.lineWidth = 2;
@@ -179,19 +172,17 @@ export default class Editor {
         var x = startX;
         var y = startY;
 
-        if (this.ui.button(this.input, "GRID", x, y, width, height, "#333333")) {
+        if (this.ui.button("GRID", x, y, width, height, "#333333")) {
             this.isGridVisible = !this.isGridVisible;
         }
-
         y += height + padding;
-
-        if (this.ui.button(this.input, "CLEAR", x, y, width, height, "#333333")) {
+        if (this.ui.button("CLEAR", x, y, width, height, "#333333")) {
+            console.log(this.asset.sprite.pixels);
             this.asset.sprite.setAllPixels(0);
+            console.log(this.asset.sprite.pixels);
         }
-
         y += height + padding;
-
-        if (this.ui.button(this.input, "SAVE", x, y, width, height, "#333333")) {
+        if (this.ui.button("SAVE", x, y, width, height, "#333333")) {
             this.save();
         }
     }
@@ -201,33 +192,31 @@ export default class Editor {
 
             this.asset.name = this.input.typedString;
 
-            if (this.ui.textBoxActive(this.input, this.input.typedString, startX, startY + 200, width, 60)) {
+            if (this.ui.textBoxActive(startX, startY + 200, width, 60)) {
                 this.input.stopTyping();
                 this.isTypingName = false;
             }
         } else {
-            if (this.ui.textBox(this.input, this.asset.name, startX, startY + 200, width, 60)) {
+            if (this.ui.textBox(this.asset.name, startX, startY + 200, width, 60)) {
                 this.input.startTyping(this.asset.name);
                 this.isTypingName = true;
             }
         }
-
         if (this.isTypingDescription) {
 
             this.asset.description = this.input.typedString;
 
-            if (this.ui.textBoxActive(this.input, this.input.typedString, startX, startY + 280, width, 120)) {
+            if (this.ui.textBoxActive(startX, startY + 280, width, 120)) {
                 this.input.stopTyping();
                 this.isTypingDescription = false;
             }
         } else {
-            if (this.ui.textBox(this.input, this.asset.description, startX, startY + 280, width, 120)) {
+            if (this.ui.textBox(this.asset.description, startX, startY + 280, width, 120)) {
                 this.input.startTyping(this.asset.description);
                 this.isTypingDescription = true;
             }
         }
-
-        var dropDownSelection = this.ui.dropDown(this.input, this.editorAssetTypes, this.asset.type, startX, startY, 80, 30, "#777777");
+        let dropDownSelection = this.ui.dropDown(this.editorAssetTypes, this.asset.type, startX, startY, 80, 30, "#777777");
         if (dropDownSelection != -1) {
             this.asset.type = dropDownSelection;
         }

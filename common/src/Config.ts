@@ -12,7 +12,7 @@ export default class Config {
     static pixelsPerRow: number = 32;
     static pixelsPerImage: number = 1024;
     static characterSpeed: number = 12;
-    static camSpeed: number = 500;
+    static camSpeed: number = 1000;
     static fastFramesPerSecond: number = 2;
     static colorSet: string[] = [
         "rgba(0,0,0,0.0)",

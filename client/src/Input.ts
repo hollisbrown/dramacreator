@@ -3,7 +3,7 @@ import Config from '../../common/src/Config';
 
 export default class Input {
 
-    canvas: any;
+    canvas: HTMLCanvasElement;
 
     isMouseClicked: boolean;
     isMouseDown: boolean;
@@ -21,8 +21,10 @@ export default class Input {
     isShortcutFreeMode: boolean;
     isShortcutBuildMode: boolean;
     isShortcutPlayMode: boolean;
+    isShortcutChat: boolean;
+    isShortcutDelete: boolean;
 
-    constructor(canvas: any) {
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.mouse = new Position(0, 0);
         this.direction = new Position(0, 0);
@@ -43,9 +45,10 @@ export default class Input {
         this.isShortcutBuildMode = false;
         this.isShortcutPlayMode = false;
         this.isShortcutFreeMode = false;
+        this.isShortcutChat = false;
+        this.isShortcutDelete = false;
         this.scrollDelta = 0;
     }
-    //MOUSE
     onMouseWheel(evt: any) {
         this.scrollDelta = evt.deltaY;
     }
@@ -67,32 +70,6 @@ export default class Input {
         this.isMouseHold = false;
         this.isMouseRight = false;
     }
-    mouseCamera(cameraPosition: Position, cameraZoom: number): Position {
-        return new Position(
-            (this.mouse.x / cameraZoom) - cameraPosition.x,
-            (this.mouse.y / cameraZoom) - cameraPosition.y
-        );
-    }
-    mousePixel(): Position {
-        return new Position(
-            Math.floor(this.mouse.x / Config.editorPixelSize),
-            Math.floor(this.mouse.y / Config.editorPixelSize));
-    }
-    mousePixelId(): number {
-        let mousePixel = this.mousePixel();
-        return mousePixel.y * Config.pixelsPerRow + mousePixel.x;
-    }
-    mouseTile(cameraPosition: Position, cameraZoom: number): Position {
-        let mouseCamera = this.mouseCamera(cameraPosition, cameraZoom);
-        return new Position(
-            Math.floor(mouseCamera.x / Config.pixelsPerRow),
-            Math.floor(mouseCamera.y / Config.pixelsPerRow)
-        );
-    }
-    mouseTileId(cameraPosition: Position, cameraZoom: number): number {
-        let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
-        return mouseTile.y * Config.tilesPerRow + mouseTile.x;
-    }
     onMouseMove(evt: any) {
         let canvasRect = this.canvas.getBoundingClientRect();
 
@@ -100,8 +77,12 @@ export default class Input {
             evt.x - canvasRect.left,
             evt.y - canvasRect.top);
     }
-    //KEYS
     onKeyDown(evt: any) {
+
+        if (evt.key == "Enter") {
+            this.isShortcutChat = true;
+        }
+
         if (this.isTyping) {
             this.writeInputString(evt);
             return;
@@ -117,19 +98,22 @@ export default class Input {
             case "3":
                 this.isShortcutPlayMode = true;
                 break;
+            case "Delete":
+                this.isShortcutDelete = true;
+                break;
         }
 
         if (evt.key == "a" || evt.key == "ArrowLeft") {
-            this.direction.x = 1;
-        }
-        if (evt.key == "w" || evt.key == "ArrowUp") {
-            this.direction.y = 1;
-        }
-        if (evt.key == "d" || evt.key == "ArrowRight") {
             this.direction.x = -1;
         }
-        if (evt.key == "s" || evt.key == "ArrowDown") {
+        if (evt.key == "w" || evt.key == "ArrowUp") {
             this.direction.y = -1;
+        }
+        if (evt.key == "d" || evt.key == "ArrowRight") {
+            this.direction.x = 1;
+        }
+        if (evt.key == "s" || evt.key == "ArrowDown") {
+            this.direction.y = 1;
         }
 
     }
@@ -144,6 +128,7 @@ export default class Input {
             }
         }
     }
+
     writeInputString(evt: any) {
 
         if (evt.keyCode >= 32 && evt.keyCode < 220) {
@@ -171,6 +156,32 @@ export default class Input {
         let ret = this.typedString;
         this.typedString = "";
         return ret;
+    }
+    mouseCamera(cameraPosition: Position, cameraZoom: number): Position {
+        return new Position(
+            (this.mouse.x / cameraZoom) + cameraPosition.x,
+            (this.mouse.y / cameraZoom) + cameraPosition.y
+        );
+    }
+    mousePixel(): Position {
+        return new Position(
+            Math.floor(this.mouse.x / Config.editorPixelSize),
+            Math.floor(this.mouse.y / Config.editorPixelSize));
+    }
+    mousePixelId(): number {
+        let mousePixel = this.mousePixel();
+        return mousePixel.y * Config.pixelsPerRow + mousePixel.x;
+    }
+    mouseTile(cameraPosition: Position, cameraZoom: number): Position {
+        let mouseCamera = this.mouseCamera(cameraPosition, cameraZoom);
+        return new Position(
+            Math.floor(mouseCamera.x / Config.pixelsPerRow),
+            Math.floor(mouseCamera.y / Config.pixelsPerRow)
+        );
+    }
+    mouseTileId(cameraPosition: Position, cameraZoom: number): number {
+        let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
+        return mouseTile.y * Config.tilesPerRow + mouseTile.x;
     }
 }
 

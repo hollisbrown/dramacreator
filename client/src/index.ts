@@ -1,7 +1,7 @@
 //import LogUtils from '../../common/src/LogUtils'  //import from "common" example
 import Input from './Input';
 import UI from './UI';
-import Renderer from './Renderer';
+import Renderer, { ISortable } from './Renderer';
 import Editor from './Editor';
 import Game from '../../common/src/Game';
 import Asset, { AssetType } from '../../common/src/Asset';
@@ -16,11 +16,11 @@ var ctx: any = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
 var game: Game = new Game();
-var ui: UI = new UI(ctx);
 var input: Input = new Input(canvas);
+var ui: UI = new UI(ctx, input);
 var camera: Camera = new Camera(canvas);
-var renderer: Renderer = new Renderer(canvas, ctx, camera);
-var builder: Builder = new Builder(canvas, ctx, input, game, ui, renderer, camera, onBuild);
+var renderer: Renderer = new Renderer(canvas, ctx, camera, game);
+var builder: Builder = new Builder(canvas, ctx, input, game, ui, renderer, camera, send);
 
 var lastTimestamp: number = 0;
 
@@ -31,7 +31,14 @@ class Mode {
     static SPECTATE: number = 3;
 }
 var mode: Mode = Mode.FREE;
-var controlledCharacterId: number = 0;
+var controlledCharacterId: number = -1;
+
+var isChatting: boolean = false;
+var isSortableMenu: boolean = false;
+var lastMouse: Position;
+var lastMouseCamera: Position;
+var selectedSortable: ISortable;
+var selectedSortableType: AssetType;
 
 window.onload = function () {
     connect();
@@ -72,17 +79,22 @@ function receive(json: string) {
             }
             break;
         case "ASSET":
-            let assetId = game.setAsset(data);
-            renderer.createSprites(game.assets[assetId]);
+            let asset = game.setAsset(data);
+            renderer.createSprites(game.assets[asset.id]);
             break;
         case "TILE":
             game.setTile(data);
             break;
         case "ITEM":
             game.setItem(data);
+            console.log(json);
             break;
         case "CHARACTER":
             game.setCharacter(data);
+            break;
+        case "CONTROL":
+            controlledCharacterId = parseInt(data);
+            setMode(Mode.PLAY);
             break;
     }
 }
@@ -94,7 +106,7 @@ function update(timestamp: number) {
         game.update(deltaTime);
     }
 
-    renderer.update(0, game);
+    renderer.update(deltaTime);
     switch (mode) {
         case Mode.FREE:
             updateFree(deltaTime);
@@ -115,13 +127,48 @@ function update(timestamp: number) {
 }
 function updateFree(deltaTime: number) {
 
-    camera.move(input.direction, deltaTime);
+    let isMouseOnSortableMenu: boolean = false;
+
+    camera.movePosition(input.direction, deltaTime);
+    camera.setZoom(input.scrollDelta);
+
+    if (isSortableMenu) {
+        isMouseOnSortableMenu = ui.sortableMenu(lastMouse, selectedSortable.id, selectedSortable.assetId, selectedSortableType);
+
+        if (selectedSortableType == AssetType.CHARACTER) {
+            if (ui.button("Control", lastMouse.x + 10, lastMouse.y + 90, 180, 40, "#111111")) {
+                isSortableMenu = false;
+                send("CONTROL", selectedSortable.id);
+            }
+        }
+    }
+
+    if (input.isMouseDown) {
+
+        if (input.isMouseRight) {
+            isSortableMenu = false;
+            return;
+        }
+
+        if (!isMouseOnSortableMenu) {
+            lastMouse = input.mouse;
+            lastMouseCamera = input.mouseCamera(camera.position, camera.zoom);
+            selectedSortable = renderer.getSortableAtPosition(lastMouseCamera);
+
+            if (selectedSortable != null) {
+                selectedSortableType = game.assets[selectedSortable.assetId].type;
+                isSortableMenu = true;
+            } else {
+                isSortableMenu = false;
+            }
+        }
+    }
 
     if (input.isShortcutPlayMode) {
-        changeMode(Mode.PLAY);
+        setMode(Mode.PLAY);
     }
     if (input.isShortcutBuildMode) {
-        changeMode(Mode.BUILD);
+        setMode(Mode.BUILD);
     }
 }
 function updateBuild(deltaTime: number) {
@@ -130,31 +177,46 @@ function updateBuild(deltaTime: number) {
 
     if (!builder.editor.isEnabled) {
 
-        camera.move(input.direction, deltaTime);
+        camera.movePosition(input.direction, deltaTime);
 
         if (input.isShortcutFreeMode) {
-            changeMode(Mode.FREE);
+            builder.reset();
+            setMode(Mode.FREE);
         }
     }
 }
 function updatePlay(deltaTime: number) {
 
     let position = game.characters[controlledCharacterId].positionRender;
-    camera.follow(position);
+    camera.setPosition(position);
+
+    if (input.isShortcutChat) {
+        if (input.isTyping) {
+            isChatting = false;
+            input.stopTyping();
+        } else {
+            isChatting = true;
+            input.startTyping("");
+        }
+    }
+
+    if (isChatting) {
+        ui.textBoxActive(30, canvas.height - 60, 800, 30);
+    }
 
     if (input.isShortcutFreeMode) {
-        changeMode(Mode.FREE);
+        setMode(Mode.FREE);
     }
     if (false) {
-        changeMode(Mode.SPECTATE);
+        setMode(Mode.SPECTATE);
     }
 }
 function updateSpectate(deltaTime: number) {
     if (false) {
-        changeMode(Mode.PLAY);
+        setMode(Mode.PLAY);
     }
 }
-function changeMode(m: Mode) {
+function setMode(m: Mode) {
     console.log("Mode: " + m);
     mode = m;
     switch (mode) {
@@ -168,7 +230,7 @@ function changeMode(m: Mode) {
             break;
     }
 }
-function onBuild(type: string, data: any) {
+function send(type: string, data: any) {
     let message = { type, data };
     let messageJSON = JSON.stringify(message);
     socket.send(messageJSON);

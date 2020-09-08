@@ -1,3 +1,4 @@
+import Asset, { AssetType } from '../../common/src/Asset';
 import Config from '../../common/src/Config';
 import Position from '../../common/src/Position';
 import Input from './Input';
@@ -5,13 +6,17 @@ import Input from './Input';
 export default class UI {
 
     ctx: any;
+    input: Input;
     cursorTimer: number = 0;
 
-    constructor(ctx: any) {
+    fontDefault: string = "15px Courier New";
+    fontSmall: string = "8px Courier New";
+
+    constructor(ctx: any, input: Input) {
         this.ctx = ctx;
+        this.input = input;
     }
     button(
-        input: Input,
         name: string,
         x: number,
         y: number,
@@ -23,25 +28,24 @@ export default class UI {
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x, y, width, height);
 
-        this.ctx.font = "15px Courier New";
+        this.ctx.font = this.fontDefault;
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = "#FFFFFF";
         this.ctx.fillText(name, x + width / 2, y + height / 2 + 4);
 
         var isHovered =
-            input.mouse.x > x &&
-            input.mouse.x < x + width &&
-            input.mouse.y > y &&
-            input.mouse.y < y + height;
+            this.input.mouse.x > x &&
+            this.input.mouse.x < x + width &&
+            this.input.mouse.y > y &&
+            this.input.mouse.y < y + height;
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.2)";
             this.ctx.fillRect(x, y, width, height);
-            return input.isMouseClicked;
+            return this.input.isMouseClicked;
         }
     }
     swatch(
-        input: Input,
         x: number,
         y: number,
         width: number,
@@ -53,19 +57,18 @@ export default class UI {
         this.ctx.fillRect(x, y, width, height);
 
         var isHovered =
-            input.mouse.x > x &&
-            input.mouse.x < x + width &&
-            input.mouse.y > y &&
-            input.mouse.y < y + height;
+            this.input.mouse.x > x &&
+            this.input.mouse.x < x + width &&
+            this.input.mouse.y > y &&
+            this.input.mouse.y < y + height;
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.2)";
             this.ctx.fillRect(x, y, width, height);
-            return input.isMouseClicked;
+            return this.input.isMouseClicked;
         }
     }
     asset(
-        input: Input,
         bufferCanvas: any,
         name: string,
         x: number,
@@ -91,19 +94,19 @@ export default class UI {
 
         this.ctx.fillStyle = "#CCCCCC";
         this.ctx.textAlign = "left";
-        this.ctx.font = "600 15px Courier New";
+        this.ctx.font = this.fontDefault;
         this.ctx.fillText(name, x + 60, y + 30);
 
         var isHovered =
-            input.mouse.x > x &&
-            input.mouse.x < x + width &&
-            input.mouse.y > y &&
-            input.mouse.y < y + height;
+            this.input.mouse.x > x &&
+            this.input.mouse.x < x + width &&
+            this.input.mouse.y > y &&
+            this.input.mouse.y < y + height;
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.02)";
             this.ctx.fillRect(x, y, width, height);
-            return input.isMouseClicked;
+            return this.input.isMouseClicked;
         }
     }
     speechbubble(
@@ -140,7 +143,7 @@ export default class UI {
             ctx.fillStyle = "#000000";
         }
         ctx.textAlign = "center";
-        ctx.font = "600 8px Courier New";
+        ctx.font = this.fontSmall;
         ctx.fillText(text, x, bubbleY + 10);
     }
     debugPoint(
@@ -162,11 +165,10 @@ export default class UI {
         ctx.stroke();
 
         ctx.textAlign = "left";
-        ctx.font = "14px Courier New";
+        ctx.font = this.fontDefault;
         ctx.fillText(name, x + 5, y + 10);
     }
     dropDown(
-        input: Input,
         options: string[],
         selected: number,
         x: number,
@@ -176,7 +178,7 @@ export default class UI {
         color: string
     ) {
         for (var i = 0; i < options.length; i++) {
-            if (this.button(input, options[i], x, y + (i * height), width, height, color)) {
+            if (this.button(options[i], x, y + (i * height), width, height, color)) {
                 return i;
             }
             if (i === selected) {
@@ -188,7 +190,6 @@ export default class UI {
         return -1;
     }
     textBox(
-        input: Input,
         text: string,
         x: number,
         y: number,
@@ -199,7 +200,7 @@ export default class UI {
         this.ctx.fillStyle = "#ffffff";
         this.ctx.fillRect(x, y, width, height);
 
-        this.ctx.font = "600 15px Courier New";
+        this.ctx.font = this.fontDefault;
         this.ctx.textAlign = "left";
         this.ctx.fillStyle = "#000000";
 
@@ -208,24 +209,22 @@ export default class UI {
             this.ctx.fillText(lines[i], x + 12, y + 20 + (i * 20));
         }
 
-        if (!input.isTyping) {
+        if (!this.input.isTyping) {
             var isHovered =
-                input.mouse.x > x &&
-                input.mouse.x < x + width &&
-                input.mouse.y > y &&
-                input.mouse.y < y + height;
+                this.input.mouse.x > x &&
+                this.input.mouse.x < x + width &&
+                this.input.mouse.y > y &&
+                this.input.mouse.y < y + height;
 
             if (isHovered) {
                 this.ctx.strokeStyle = "#000000";
                 this.ctx.strokeRect(x, y, width, height);
-                return input.isMouseClicked;
+                return this.input.isMouseClicked;
             }
         }
 
     }
     textBoxActive(
-        input: Input,
-        text: string,
         x: number,
         y: number,
         width: number,
@@ -235,11 +234,11 @@ export default class UI {
         this.ctx.fillStyle = "#ffffff";
         this.ctx.fillRect(x, y, width, height);
 
-        this.ctx.font = "600 15px Courier New";
+        this.ctx.font = this.fontDefault;
         this.ctx.textAlign = "left";
         this.ctx.fillStyle = "#000000";
 
-        var lines = this.getTextLines(input.typedString, Math.floor(width / 10));
+        var lines = this.getTextLines(this.input.typedString, Math.floor(width / 10));
 
         if (this.cursorTimer < 0.5) {
             lines[lines.length - 1] += "|";
@@ -252,15 +251,15 @@ export default class UI {
         }
 
         var isHovered =
-            input.mouse.x > x &&
-            input.mouse.x < x + width &&
-            input.mouse.y > y &&
-            input.mouse.y < y + height;
+            this.input.mouse.x > x &&
+            this.input.mouse.x < x + width &&
+            this.input.mouse.y > y &&
+            this.input.mouse.y < y + height;
 
         if (!isHovered) { //click outside
             this.ctx.strokeStyle = "#000000";
             this.ctx.strokeRect(x, y, width, height);
-            return input.isMouseClicked;
+            return this.input.isMouseClicked;
         }
     }
     getTextLines(text: string, maxCharactersPerLine: number) {
@@ -288,5 +287,29 @@ export default class UI {
         }
         return lines;
     }
-}
 
+    sortableMenu(position: Position, id: number, assetId: number, assetType: AssetType): boolean {
+
+        let width = 200;
+        let height = 140;
+
+        this.ctx.fillStyle = "#040404";
+        this.ctx.fillRect(position.x, position.y, width, height);
+
+        this.ctx.font = this.fontDefault;
+        this.ctx.textAlign = "left";
+        this.ctx.fillStyle = "#ffffff";
+
+        this.ctx.fillText("Type: " + assetType, position.x + 20, position.y + 30);
+        this.ctx.fillText("Id: " + id, position.x + 20, position.y + 50);
+        this.ctx.fillText("Asset Id: " + assetId, position.x + 20, position.y + 70);
+
+        let isHovered: boolean = (
+            this.input.mouse.x > position.x &&
+            this.input.mouse.x < position.x + width &&
+            this.input.mouse.y > position.y &&
+            this.input.mouse.y < position.y + height
+        )
+        return isHovered;
+    }
+}

@@ -2,6 +2,7 @@ import Position from "./Position";
 
 export default class Character {
 
+    isUsed: boolean;
     id: number;
     assetId: number;
     frameId: number;
@@ -24,7 +25,8 @@ export default class Character {
         this.positionLast = position;
         this.positionRender = position;
         this.positionTarget = position;
-        this.offset = new Position(16,32);
+        this.offset = new Position(16, 32);
+        this.isUsed = false;
     }
 
     lerp(amount: number) {

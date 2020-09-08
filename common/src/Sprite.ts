@@ -57,13 +57,12 @@ export default class Sprite {
     }
     getPixelsTranslated(x: number, y: number): Uint8Array {
         let translatedImage = new Uint8Array(this.width * this.width);
-        console.log("x:" + x + " y:" + y + " image before: " + translatedImage.length);
         for (var i = 0; i < translatedImage.length; i++) {
 
             let currentX = i % this.width;
             let currentY = Math.floor(i / this.width);
-            let newX = (currentX + x);
-            let newY = (currentY + y);
+            let newX = (currentX - x);
+            let newY = (currentY - y);
 
             //loop
             if (newX < 0) {

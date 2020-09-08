@@ -9,6 +9,7 @@ import Item from '../../common/src/Item';
 import Character from '../../common/src/Character';
 
 export interface ISortable {
+    isUsed: boolean;
     id: number;
     positionRender: Position;
     offset: Position;
@@ -25,17 +26,19 @@ export default class Renderer {
     bufferCtx: any[] = [];
     renderStack: ISortable[] = [];
 
+    game: Game;
     hoveredSortable: number = -1;
     pickedSortable: number = -1;
 
     //spritesToRenderWall: boolean[] = [];
     //spritesToRenderCharacter: number[] = [];
 
-    constructor(canvas: any, ctx: any, camera: Camera) {
+    constructor(canvas: any, ctx: any, camera: Camera, game: Game) {
 
         this.canvas = canvas;
         this.ctx = ctx;
         this.camera = camera;
+        this.game = game;
 
         for (var i = 0; i < Config.maxAssets; i++) {
             let canv = document.createElement("canvas");
@@ -52,27 +55,23 @@ export default class Renderer {
         this.bufferCtx[asset.id].clearRect(0, 0, this.bufferCanvas[asset.id].width, this.bufferCanvas[asset.id].height)
         asset.sprite.render(this.bufferCtx[asset.id], Config.colorSet, 0, 1);
     }
-    update(characterLerp: number, game: Game) {
+    update(deltaTime: number) {
         this.renderStack = [];
 
         //Add characters to render stack
-        for (var i = 0; i < game.characters.length; i++) {
-            //let character = Object.assign(new Character(), game.characters[i]);
-            let character = game.characters[i];
-            //character.lerp(characterLerp);
-            this.renderStack.push(character);
-        }
-
-        //Add items to render stack
-        for (var i = 0; i < game.items.length; i++) {
-            if (game.items[i].containerId != 0) {
-                return;
+        for (var i = 0; i < this.game.characters.length; i++) {
+            if (this.game.characters[i].isUsed) {
+                this.renderStack.push(this.game.characters[i]);
             }
-            //let item = Object.assign(new Item(), game.items[i]);
-            let item = game.items[i];
-            this.renderStack.push(item);
         }
-
+        //Add items to render stack
+        for (var i = 0; i < this.game.items.length; i++) {
+            if (this.game.items[i].isUsed &&
+                this.game.items[i].containerId == 0) {
+                let item = this.game.items[i];
+                this.renderStack.push(item);
+            }
+        }
         //Z sort render stack based on Y position
         this.renderStack.sort(function (a, b) { return a.positionRender.y - b.positionRender.y });
 
@@ -82,12 +81,12 @@ export default class Renderer {
 
         //DRAW STUFF
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
-        this.ctx.translate(this.camera.position.x, this.camera.position.y);
+        this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
         //Draw Tiles
-        for (var i = 0; i < game.tiles.length; i++) {
+        for (var i = 0; i < this.game.tiles.length; i++) {
             let x = Config.pixelsPerRow * (i % Config.tilesPerRow);
             let y = Config.pixelsPerRow * (Math.floor(i / Config.tilesPerRow));
-            let assetId = game.tiles[i].assetId;
+            let assetId = this.game.tiles[i].assetId;
 
             this.ctx.drawImage(
                 this.bufferCanvas[assetId],
@@ -114,7 +113,7 @@ export default class Renderer {
         //Draw Sortables (Characters, Items ...)
         for (var i = 0; i < this.renderStack.length; i++) {
             let spriteId: number = 0;
-            if (game.assets[this.renderStack[i].assetId].type == AssetType.CHARACTER) {
+            if (this.game.assets[this.renderStack[i].assetId].type == AssetType.CHARACTER) {
                 //offset = spritesToRenderCharacter[renderStack[i].characterId];
             }
 
@@ -159,7 +158,7 @@ export default class Renderer {
         //     ctx.closePath();
         //     ctx.fill();
         // }
-        this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
+        this.ctx.translate(this.camera.position.x, this.camera.position.y);
         this.ctx.scale(1 / this.camera.zoom, 1 / this.camera.zoom);
     }
     debugShowSprites() {
@@ -169,18 +168,23 @@ export default class Renderer {
             this.ctx.drawImage(this.bufferCanvas[i], x * (32 + 4), y * (32 + 4));
         }
     }
-    getSortableAtPosition(position: Position): ISortable {
+    getSortableAtPosition(positionMouse: Position): ISortable {
         for (var i = this.renderStack.length - 1; i >= 0; i--) {
-            let pos = this.renderStack[i].positionRender;
+            let positionRender = this.renderStack[i].positionRender;
             let offset = this.renderStack[i].offset;
             if (
-                position.x > pos.x - offset.x &&
-                position.x < pos.x + offset.x &&
-                position.y > pos.y - offset.y &&
-                position.y < pos.y
+                positionMouse.x > positionRender.x - offset.x &&
+                positionMouse.x < positionRender.x + offset.x &&
+                positionMouse.y > positionRender.y - offset.y &&
+                positionMouse.y < positionRender.y
             ) {
-                this.hoveredSortable = i;
-                return this.renderStack[i];
+                let pixelX = Math.floor(positionMouse.x - positionRender.x + offset.x);
+                let pixelY = Math.floor(positionMouse.y - positionRender.y + offset.y);
+                let sprite = this.game.assets[this.renderStack[i].assetId].sprite;
+                if (sprite.getPixel(pixelX, pixelY) != 0) {
+                    this.hoveredSortable = i;
+                    return this.renderStack[i];
+                }
             }
         }
         this.hoveredSortable = -1;
@@ -189,7 +193,7 @@ export default class Renderer {
     showPick() {
         this.pickedSortable = this.hoveredSortable;
     }
-    showDrop() {
+    hidePick() {
         this.pickedSortable = -1;
         this.hoveredSortable = -1;
     }

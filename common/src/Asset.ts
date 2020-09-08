@@ -2,6 +2,7 @@ import Sprite from './Sprite';
 
 export default class Asset {
 
+    isUsed: boolean;
     id: number;
     type: number;
     name: string;
@@ -20,6 +21,7 @@ export default class Asset {
         this.name = name;
         this.description = description;
         this.sprite = sprite;
+        this.isUsed = false;
     }
 }
 
