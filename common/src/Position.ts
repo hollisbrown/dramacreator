@@ -56,7 +56,7 @@ export default class Position {
         )
     }
     floor() {
-        this.x = Math.floor(this.x);
-        this.y = Math.floor(this.y);
+        this.x = Math.floor(this.x * 10) / 10;
+        this.y = Math.floor(this.y * 10) / 10;
     }
 }

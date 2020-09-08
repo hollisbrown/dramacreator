@@ -117,10 +117,10 @@ export default class Builder {
         //this.ctx.fillRect(this.x, this.y, this.width, totalHeight);
 
         let isHovered =
-            this.input.mouse.x > this.x &&
-            this.input.mouse.x < this.x + this.width &&
-            this.input.mouse.y > this.y &&
-            this.input.mouse.y < this.y + totalHeight;
+            this.input.mousePosition.x > this.x &&
+            this.input.mousePosition.x < this.x + this.width &&
+            this.input.mousePosition.y > this.y &&
+            this.input.mousePosition.y < this.y + totalHeight;
 
         if (isHovered) {
             this.input.isMouseOnUi = true;
@@ -134,10 +134,10 @@ export default class Builder {
         }
 
         this.isDropdownHovered = (
-            this.input.mouse.x > this.x &&
-            this.input.mouse.x < this.x + this.width &&
-            this.input.mouse.y > 0 &&
-            this.input.mouse.y < height
+            this.input.mousePosition.x > this.x &&
+            this.input.mousePosition.x < this.x + this.width &&
+            this.input.mousePosition.y > 0 &&
+            this.input.mousePosition.y < height
         )
 
         if (this.isDropdownEnabled) {
@@ -252,7 +252,7 @@ export default class Builder {
         let offset: Position;
 
         if (this.hasTileSelected) {
-            let worldPosition = this.camera.getWorldPosition(this.input.mouse);
+            let worldPosition = this.camera.getWorldPosition(this.input.mousePosition);
             let tilePosition = this.getTilePosition(worldPosition);
             tilePosition = tilePosition.multiply(Config.pixelsPerRow);
 
@@ -261,12 +261,12 @@ export default class Builder {
             offset = new Position(0, 0);
 
         } else if (this.hasSortableSelected) {
-            position = this.input.mouse;
+            position = this.input.mousePosition;
             img = this.renderer.bufferCanvas[this.selectedAsset.id];
             offset = new Position(16, 32);
 
         } else if (this.hasSortablePicked) {
-            position = this.input.mouse;
+            position = this.input.mousePosition;
             img = this.renderer.bufferCanvas[this.pickedSortable.assetId];
             offset = this.pickedSortable.offset;
         } else {
@@ -284,7 +284,7 @@ export default class Builder {
         this.ctx.globalAlpha = 1;
     }
     build() {
-        let position = this.camera.getWorldPosition(this.input.mouse);
+        let position = this.camera.getWorldPosition(this.input.mousePosition);
         if (!this.isPositionOnTiles(position)) {
             return;
         }
@@ -297,19 +297,19 @@ export default class Builder {
                 this.send("TILE", tile);
                 break;
             case AssetType.ITEM:
-                let item = new Item(-1, this.selectedAsset.id, 0, position, 0, 0);
+                let item = new Item(-1, this.selectedAsset.id, position, 0, 0);
                 item.isUsed = true;
                 this.send("ITEM", item);
                 break;
             case AssetType.CHARACTER:
-                let character = new Character(-1, this.selectedAsset.id, 0, position);
+                let character = new Character(-1, this.selectedAsset.id, position);
                 character.isUsed = true;
                 this.send("CHARACTER", character);
                 break;
         }
     }
     pick() {
-        let mouseCam = this.camera.getWorldPosition(this.input.mouse);
+        let mouseCam = this.camera.getWorldPosition(this.input.mousePosition);
         this.pickedSortable = this.renderer.getSortableAtPosition(mouseCam)
         if (this.pickedSortable != null) {
             this.hasTileSelected = false;
@@ -318,7 +318,7 @@ export default class Builder {
         }
     }
     drop() {
-        let position = this.camera.getWorldPosition(this.input.mouse);
+        let position = this.camera.getWorldPosition(this.input.mousePosition);
         let type = this.game.assets[this.pickedSortable.assetId].type;
         switch (type) {
             case AssetType.ITEM:

@@ -46,7 +46,7 @@ export default class Editor {
     }
     update() {
         this.background();
-        this.asset.sprite.render(this.ctx, Config.colorSet, 0, Config.editorPixelSize);
+        this.asset.sprite.render(this.ctx, Config.colorSet, 0, 0, Config.editorPixelSize);
         this.grid();
         this.swatches(790, 16, 4, 42, 42);
         this.tools(940, 16, 4, 120, 50);
@@ -57,10 +57,10 @@ export default class Editor {
     }
     paint() {
         this.isMouseOnSprite =
-            this.input.mouse.x >= 0 &&
-            this.input.mouse.x < Config.editorPixelSize * Config.pixelsPerRow &&
-            this.input.mouse.y >= 0 &&
-            this.input.mouse.y < Config.editorPixelSize * Config.pixelsPerRow;
+            this.input.mousePosition.x >= 0 &&
+            this.input.mousePosition.x < Config.editorPixelSize * Config.pixelsPerRow &&
+            this.input.mousePosition.y >= 0 &&
+            this.input.mousePosition.y < Config.editorPixelSize * Config.pixelsPerRow;
 
         if (!this.isMouseOnSprite) {
             return;
@@ -109,7 +109,6 @@ export default class Editor {
             if (!this.isTranslatingPixels) {
                 this.isTranslatingPixels = true;
                 this.asset.sprite.pixels = new Uint8Array(this.asset.sprite.getPixelsTranslated(x, y));
-                console.log("translated");
             }
         } else {
             this.isTranslatingPixels = false;
@@ -177,9 +176,7 @@ export default class Editor {
         }
         y += height + padding;
         if (this.ui.button("CLEAR", x, y, width, height, "#333333")) {
-            console.log(this.asset.sprite.pixels);
             this.asset.sprite.setAllPixels(0);
-            console.log(this.asset.sprite.pixels);
         }
         y += height + padding;
         if (this.ui.button("SAVE", x, y, width, height, "#333333")) {
@@ -189,7 +186,6 @@ export default class Editor {
     properties(startX: number, startY: number, padding: number, width: number, height: number) {
 
         if (this.isTypingName) {
-
             this.asset.name = this.input.typedString;
 
             if (this.ui.textBoxActive(startX, startY + 200, width, 60)) {

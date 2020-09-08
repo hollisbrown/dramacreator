@@ -1,5 +1,3 @@
-import Config from "./Config";
-
 export default class Sprite {
 
     id: number;
@@ -14,18 +12,17 @@ export default class Sprite {
         this.width = width;
         this.pixels = new Uint8Array(this.width * this.width);
     }
-
-    render(context: any, colorSet: string[], frame: number, pixelSize: number) {
+    render(context: any, colorSet: string[], x: number, y: number, pixelSize: number) {
         for (var i = 0; i < this.width * this.width; i++) {
-            let x = i % this.width + (frame * this.width);
-            let y = Math.floor(i / this.width);
+            let renderX = (x * pixelSize) + i % this.width;
+            let renderY = (y * pixelSize) + Math.floor(i / this.width);
             let colorId = this.pixels[i];
             if (colorId < 0 || colorId >= colorSet.length) {
                 context.fillStyle = colorSet[0];
             } else {
                 context.fillStyle = colorSet[colorId];
             }
-            context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            context.fillRect(renderX * pixelSize, renderY * pixelSize, pixelSize, pixelSize);
         }
     }
     setPixel(x: number, y: number, color: number) {
@@ -47,19 +44,19 @@ export default class Sprite {
         return this.pixels[id];
     }
     getPixelsCropped(topX: number, topY: number, bottomX: number, bottomY: number): Uint8Array {
-        var croppedImage = new Uint8Array(this.pixels);
-        for (var i = 0; i < croppedImage.length; i++) {
+        var pixelsCropped = new Uint8Array(this.pixels);
+        for (var i = 0; i < pixelsCropped.length; i++) {
             var x = i % this.width;
             var y = Math.floor(i / this.width);
             if (x < topX || x > bottomX || y < topY || y > bottomY) {
-                croppedImage[i] = 0;
+                pixelsCropped[i] = 0;
             }
         }
-        return croppedImage;
+        return pixelsCropped;
     }
     getPixelsTranslated(x: number, y: number): Uint8Array {
-        let translatedImage = new Uint8Array(this.width * this.width);
-        for (var i = 0; i < translatedImage.length; i++) {
+        let pixelsTranslated = new Uint8Array(this.width * this.width);
+        for (var i = 0; i < pixelsTranslated.length; i++) {
 
             let currentX = i % this.width;
             let currentY = Math.floor(i / this.width);
@@ -79,27 +76,26 @@ export default class Sprite {
             }
 
             let index = newY * this.width + newX;
-            translatedImage[i] = this.pixels[index];
+            pixelsTranslated[i] = this.pixels[index];
         }
-        console.log("image after: " + translatedImage.length);
-        return translatedImage;
+        return pixelsTranslated;
     }
     getPixelsCombined(pixels: Uint8Array[]): Uint8Array {
-        let combinedImage = new Uint8Array(pixels[0]);
+        let pixelsCombined = new Uint8Array(pixels[0]);
         for (var j = 0; j < pixels.length - 1; j++) {
             let topImage = pixels[j + 1];
-            for (var i = 0; i < combinedImage.length; i++) {
+            for (var i = 0; i < pixelsCombined.length; i++) {
                 if (topImage[i] != 0) {
-                    combinedImage[i] = topImage[i];
+                    pixelsCombined[i] = topImage[i];
                 }
             }
         }
-        return combinedImage;
+        return pixelsCombined;
     }
     getPixelsRotated(rotation: number): Uint8Array {
-        let rotatedImage = new Uint8Array(this.pixels);
+        let pixelsRotated = new Uint8Array(this.pixels);
 
-        for (var i = 0; i < rotatedImage.length; i++) {
+        for (var i = 0; i < pixelsRotated.length; i++) {
             let x = i % this.width;
             let y = Math.floor(i / this.width);
 
@@ -115,10 +111,10 @@ export default class Sprite {
                 tempY = rotatedY;
             }
             let index = rotatedY * this.width + rotatedX;
-            rotatedImage[index] = this.pixels[i];
+            pixelsRotated[index] = this.pixels[i];
         }
 
-        return rotatedImage;
+        return pixelsRotated;
     }
     getPixelBounds(): number[] {
         let topX = this.width / 2;

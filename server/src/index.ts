@@ -25,9 +25,15 @@ function start() {
     console.log("Server starting ...");
     webSocketServer.on("connection", connect);
     server.listen(port, function () { console.log("server is listening"); });
-
     loadFromFile();
+    setInterval(update, 1000);
 }
+
+function update() {
+    game.fixedUpdate();
+    sendToAll("WALK", game.getPositions());
+}
+
 function saveToFile() {
     let data = JSON.stringify(game);
 
@@ -84,19 +90,25 @@ function receive(json: string, socket: any) {
     let id: number = -1;
     switch (type) {
         case "ASSET":
-            setAsset(socket, data);
+            receiveAsset(socket, data);
             break;
         case "TILE":
-            setTile(socket, data);
+            receiveTile(socket, data);
             break;
         case "ITEM":
-            setItem(socket, data);
+            receiveItem(socket, data);
             break;
         case "CHARACTER":
-            setCharacter(socket, data);
+            receiveCharacter(socket, data);
             break;
         case "CONTROL":
-            setControl(socket, data);
+            receiveControl(socket, data);
+            break;
+        case "CHAT":
+            receiveChat(socket, data);
+            break;
+        case "WALK":
+            receiveWalkTarget(socket, data);
             break;
     }
 }
@@ -120,39 +132,52 @@ function getPlayerId(socket: any): number {
     }
     return -1; //socket not registered
 }
-function setAsset(socket: any, data: any) {
+function receiveAsset(socket: any, data: any) {
     let asset = game.setAsset(data);
     if (asset.id != -1) {
         sendToAll("ASSET", data);
     }
 }
-function setTile(socket: any, data: any) {
+function receiveTile(socket: any, data: any) {
     let tile = game.setTile(data);
     if (tile.id != -1) {
         sendToAll("TILE", data);
     }
 }
-function setItem(socket: any, data: any) {
+function receiveItem(socket: any, data: any) {
     let item = game.setItem(data);
     if (item.id != -1) {
         sendToAll("ITEM", item);
     }
 }
-function setCharacter(socket: any, data: any) {
+function receiveCharacter(socket: any, data: any) {
     let character = game.setCharacter(data);
     if (character.id != -1) {
         sendToAll("CHARACTER", data);
     }
 }
-function setControl(socket: any, data: any): boolean {
+function receiveControl(socket: any, data: any): boolean {
+    let playerId = getPlayerId(socket);
     let receivedCharacterId = parseInt(data);
-    for (var i = 0; i < players.length; i++) {
-        if (players[i].characterId == receivedCharacterId) {
-            return false;
+    if (receivedCharacterId != -1) {
+        for (var i = 0; i < players.length; i++) {
+            if (players[i].characterId == receivedCharacterId) {
+                return false;
+            }
         }
     }
-    players[getPlayerId(socket)].characterId = receivedCharacterId;
+    players[playerId].characterId = receivedCharacterId;
     send(socket, "CONTROL", receivedCharacterId);
     return true;
 }
-
+function receiveChat(socket: any, data: any) {
+    let playerId = getPlayerId(socket);
+    let characterId = players[playerId].characterId;
+    let message = data;
+    sendToAll("CHAT", { characterId, message });
+}
+function receiveWalkTarget(socket: any, data: any) {
+    let playerId = getPlayerId(socket);
+    let characterId = players[playerId].characterId;
+    game.setPosition(characterId, data);
+}

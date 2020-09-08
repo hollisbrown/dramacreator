@@ -24,6 +24,7 @@ export default class Camera {
         newPosition.x -= this.canvas.width / (2 * this.zoom);
         newPosition.y -= this.canvas.height / (2 * this.zoom);
         this.position = newPosition;
+        this.position.floor();
     }
 
     setZoom(scroll: number) {

@@ -5,19 +5,17 @@ export default class Character {
     isUsed: boolean;
     id: number;
     assetId: number;
-    frameId: number;
     position: Position;
     positionRender: Position;
     positionLast: Position;
     positionTarget: Position;
     bufferCanvas: OffscreenCanvas;
     offset: Position;
-
+    
     constructor(
         id: number = 0,
         assetId: number = 0,
-        frameId: number = 0,
-        position: Position = new Position()
+        position: Position = new Position(0,0)
     ) {
         this.id = id;
         this.assetId = assetId;

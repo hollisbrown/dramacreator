@@ -11,7 +11,7 @@ export default class Config {
     static editorPixelSize = 24;
     static pixelsPerRow: number = 32;
     static pixelsPerImage: number = 1024;
-    static characterSpeed: number = 12;
+    static characterSpeed: number = 40;
     static camSpeed: number = 1000;
     static fastFramesPerSecond: number = 2;
     static colorSet: string[] = [

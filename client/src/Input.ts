@@ -11,22 +11,22 @@ export default class Input {
     isMouseRight: boolean;
     isMouseHold: boolean;
     isMouseOnUi: boolean;
-    mouse: Position;
+    mousePosition: Position;
     scrollDelta: number;
 
     direction: Position;
     typedString: string;
     isTyping: boolean;
     isEnter: boolean;
+    isShortcutDebug: boolean;
     isShortcutFreeMode: boolean;
     isShortcutBuildMode: boolean;
-    isShortcutPlayMode: boolean;
     isShortcutChat: boolean;
     isShortcutDelete: boolean;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.mouse = new Position(0, 0);
+        this.mousePosition = new Position(0, 0);
         this.direction = new Position(0, 0);
         document.addEventListener('contextmenu', (evt) => this.onContextMenu(evt));
         document.addEventListener('click', (evt) => this.onMouseClick(evt));
@@ -42,8 +42,8 @@ export default class Input {
         this.isMouseDown = false;
         this.isMouseUp = false;
         this.isEnter = false;
+        this.isShortcutDebug = false;
         this.isShortcutBuildMode = false;
-        this.isShortcutPlayMode = false;
         this.isShortcutFreeMode = false;
         this.isShortcutChat = false;
         this.isShortcutDelete = false;
@@ -73,7 +73,7 @@ export default class Input {
     onMouseMove(evt: any) {
         let canvasRect = this.canvas.getBoundingClientRect();
 
-        this.mouse = new Position(
+        this.mousePosition = new Position(
             evt.x - canvasRect.left,
             evt.y - canvasRect.top);
     }
@@ -95,11 +95,11 @@ export default class Input {
             case "2":
                 this.isShortcutBuildMode = true;
                 break;
-            case "3":
-                this.isShortcutPlayMode = true;
-                break;
             case "Delete":
                 this.isShortcutDelete = true;
+                break;
+            case "Dead":
+                this.isShortcutDebug = true;
                 break;
         }
 
@@ -115,7 +115,6 @@ export default class Input {
         if (evt.key == "s" || evt.key == "ArrowDown") {
             this.direction.y = 1;
         }
-
     }
     onKeyUp(evt: any) {
         if (!this.isTyping) {
@@ -128,7 +127,6 @@ export default class Input {
             }
         }
     }
-
     writeInputString(evt: any) {
 
         if (evt.keyCode >= 32 && evt.keyCode < 220) {
@@ -159,14 +157,14 @@ export default class Input {
     }
     mouseCamera(cameraPosition: Position, cameraZoom: number): Position {
         return new Position(
-            (this.mouse.x / cameraZoom) + cameraPosition.x,
-            (this.mouse.y / cameraZoom) + cameraPosition.y
+            (this.mousePosition.x / cameraZoom) + cameraPosition.x,
+            (this.mousePosition.y / cameraZoom) + cameraPosition.y
         );
     }
     mousePixel(): Position {
         return new Position(
-            Math.floor(this.mouse.x / Config.editorPixelSize),
-            Math.floor(this.mouse.y / Config.editorPixelSize));
+            Math.floor(this.mousePosition.x / Config.editorPixelSize),
+            Math.floor(this.mousePosition.y / Config.editorPixelSize));
     }
     mousePixelId(): number {
         let mousePixel = this.mousePixel();

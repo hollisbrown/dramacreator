@@ -18,26 +18,28 @@ var game: Game = new Game();
 var input: Input = new Input(canvas);
 var ui: UI = new UI(ctx, input);
 var camera: Camera = new Camera(canvas);
-var renderer: Renderer = new Renderer(canvas, ctx, camera, game);
+var renderer: Renderer = new Renderer(canvas, ctx, camera, game, ui);
 var builder: Builder = new Builder(canvas, ctx, input, game, ui, renderer, camera, send);
 
-var lastTimestamp: number = 0;
 
 class Mode {
     static FREE: number = 0;
     static BUILD: number = 1;
     static PLAY: number = 2;
     static SPECTATE: number = 3;
+    static DEBUG: number = 99;
 }
 var mode: Mode = Mode.FREE;
-var controlledCharacterId: number = -1;
-
+var lastTimestamp: number = 0;
 var isChatting: boolean = false;
 var isSortableMenu: boolean = false;
 var lastMouse: Position;
 var lastMouseCamera: Position;
 var selectedSortable: ISortable;
 var selectedSortableType: AssetType;
+
+var controlledCharacterId: number = -1;
+var chatLog: string[] = [];
 
 window.addEventListener('resize', resize, false); resize();
 window.onload = function () {
@@ -75,43 +77,39 @@ function receive(json: string) {
     let object = JSON.parse(json);
     let type: string = object.type;
     let data: any = object.data;
-
     switch (type) {
         case "GAME":
-            let gameData = Object.assign(new Game, data);
-            game.load(gameData);
-            for (var i = 0; i < game.assets.length; i++) {
-                renderer.createSprites(game.assets[i]);
-            }
+            receiveGame(data);
             break;
         case "ASSET":
             let asset = game.setAsset(data);
             renderer.createSprites(game.assets[asset.id]);
             break;
         case "TILE":
-            game.setTile(data);
+            let tile = game.setTile(data);
+            renderer.setWallFrames();
             break;
         case "ITEM":
             game.setItem(data);
-            console.log(json);
             break;
         case "CHARACTER":
             game.setCharacter(data);
             break;
         case "CONTROL":
-            controlledCharacterId = parseInt(data);
-            setMode(Mode.PLAY);
+            receiveControl(data);
+            break;
+        case "CHAT":
+            receiveChat(data);
+            break;
+        case "WALK":
+            game.setPositions(data);
+            renderer.characterLerp = 0;
             break;
     }
 }
 function update(timestamp: number) {
     let deltaTime: number = (timestamp - lastTimestamp) / 1000;
     lastTimestamp = timestamp;
-
-    if (game.isRunning) {
-        game.update(deltaTime);
-    }
-
     renderer.update(deltaTime);
     switch (mode) {
         case Mode.FREE:
@@ -126,18 +124,18 @@ function update(timestamp: number) {
         case Mode.SPECTATE:
             updateSpectate(deltaTime);
             break;
+        case Mode.DEBUG:
+            updateDebug();
+            break;
     }
-
     input.reset();
     requestAnimationFrame(update);
 }
 function updateFree(deltaTime: number) {
 
     let isMouseOnSortableMenu: boolean = false;
-
     camera.movePosition(input.direction, deltaTime);
     camera.setZoom(input.scrollDelta);
-
     if (isSortableMenu) {
         isMouseOnSortableMenu = ui.sortableMenu(lastMouse, selectedSortable.id, selectedSortable.assetId, selectedSortableType);
 
@@ -148,7 +146,6 @@ function updateFree(deltaTime: number) {
             }
         }
     }
-
     if (input.isMouseDown) {
 
         if (input.isMouseRight) {
@@ -157,7 +154,7 @@ function updateFree(deltaTime: number) {
         }
 
         if (!isMouseOnSortableMenu) {
-            lastMouse = input.mouse;
+            lastMouse = input.mousePosition;
             lastMouseCamera = input.mouseCamera(camera.position, camera.zoom);
             selectedSortable = renderer.getSortableAtPosition(lastMouseCamera);
 
@@ -169,12 +166,11 @@ function updateFree(deltaTime: number) {
             }
         }
     }
-
-    if (input.isShortcutPlayMode) {
-        setMode(Mode.PLAY);
-    }
     if (input.isShortcutBuildMode) {
         setMode(Mode.BUILD);
+    }
+    if (input.isShortcutDebug) {
+        setMode(Mode.DEBUG);
     }
 }
 function updateBuild(deltaTime: number) {
@@ -192,14 +188,15 @@ function updateBuild(deltaTime: number) {
     }
 }
 function updatePlay(deltaTime: number) {
-
     let position = game.characters[controlledCharacterId].positionRender;
     camera.setPosition(position);
-
     if (input.isShortcutChat) {
         if (input.isTyping) {
             isChatting = false;
-            input.stopTyping();
+            let message = input.stopTyping();
+            if (message.length > 0) {
+                send("CHAT", message);
+            }
         } else {
             isChatting = true;
             input.startTyping("");
@@ -210,16 +207,25 @@ function updatePlay(deltaTime: number) {
         ui.textBoxActive(30, canvas.height - 60, 800, 30);
     }
 
-    if (input.isShortcutFreeMode) {
-        setMode(Mode.FREE);
+    if (input.isMouseDown) {
+        send("WALK", camera.getWorldPosition(input.mousePosition));
     }
-    if (false) {
-        setMode(Mode.SPECTATE);
+
+    if (input.isShortcutFreeMode) {
+        send("CONTROL", -1);
     }
 }
 function updateSpectate(deltaTime: number) {
-    if (false) {
-        setMode(Mode.PLAY);
+
+}
+function updateDebug() {
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < renderer.bufferCanvas.length; i++) {
+        ctx.drawImage(renderer.bufferCanvas[i], 50, 50 + i * (Config.pixelsPerRow + 4));
+    }
+    if (input.isShortcutDebug) {
+        setMode(Mode.FREE);
     }
 }
 function setMode(m: Mode) {
@@ -234,10 +240,39 @@ function setMode(m: Mode) {
             break;
         case Mode.SPECTATE:
             break;
+        case Mode.DEBUG:
+            break;
     }
 }
 function send(type: string, data: any) {
     let message = { type, data };
     let messageJSON = JSON.stringify(message);
     socket.send(messageJSON);
+}
+function receiveGame(data: any) {
+    let gameData = Object.assign(new Game, data);
+    game.load(gameData);
+    for (var i = 0; i < game.assets.length; i++) {
+        renderer.createSprites(game.assets[i]);
+    }
+    renderer.setWallFrames();
+}
+function receiveControl(data: any) {
+    controlledCharacterId = parseInt(data);
+    console.log("received control: " + controlledCharacterId);
+    if (controlledCharacterId == -1) {
+        setMode(Mode.FREE);
+    } else {
+        setMode(Mode.PLAY);
+    }
+}
+function receiveChat(data: any) {
+    let characterId: number = data.characterId;
+    let message: string = data.message;
+    renderer.characterChats[characterId] = message;
+    renderer.characterChatTimers[characterId] = 5;
+    chatLog.push(characterId + ": " + message);
+    if (chatLog.length > 4) {
+        chatLog.shift();
+    }
 }

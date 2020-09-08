@@ -34,10 +34,10 @@ export default class UI {
         this.ctx.fillText(name, x + width / 2, y + height / 2 + 4);
 
         var isHovered =
-            this.input.mouse.x > x &&
-            this.input.mouse.x < x + width &&
-            this.input.mouse.y > y &&
-            this.input.mouse.y < y + height;
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < y + height;
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.2)";
@@ -57,10 +57,10 @@ export default class UI {
         this.ctx.fillRect(x, y, width, height);
 
         var isHovered =
-            this.input.mouse.x > x &&
-            this.input.mouse.x < x + width &&
-            this.input.mouse.y > y &&
-            this.input.mouse.y < y + height;
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < y + height;
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.2)";
@@ -69,7 +69,7 @@ export default class UI {
         }
     }
     asset(
-        bufferCanvas: any,
+        img: any,
         name: string,
         x: number,
         y: number,
@@ -81,7 +81,7 @@ export default class UI {
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x, y, width, height);
         this.ctx.drawImage(
-            bufferCanvas,
+            img,
             0,
             0,
             Config.pixelsPerRow,
@@ -98,10 +98,10 @@ export default class UI {
         this.ctx.fillText(name, x + 60, y + 30);
 
         var isHovered =
-            this.input.mouse.x > x &&
-            this.input.mouse.x < x + width &&
-            this.input.mouse.y > y &&
-            this.input.mouse.y < y + height;
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < y + height;
 
         if (isHovered) {
             this.ctx.fillStyle = "rgba(255,255,255,0.02)";
@@ -110,7 +110,6 @@ export default class UI {
         }
     }
     speechbubble(
-        ctx: any,
         text: string,
         x: number,
         y: number
@@ -122,29 +121,29 @@ export default class UI {
         var isEmote = text[0] == "*";
         //bubble
         if (isEmote) {
-            ctx.fillStyle = "rgba(20,20,20,0.75)";
+            this.ctx.fillStyle = "rgba(20,20,20,0.75)";
         } else {
-            ctx.fillStyle = "rgba(255,255,255,0.75)";
+            this.ctx.fillStyle = "rgba(255,255,255,0.75)";
         }
-        ctx.fillRect(bubbleX, bubbleY, width, height);
+        this.ctx.fillRect(bubbleX, bubbleY, width, height);
 
         //trunk
-        ctx.beginPath();
-        ctx.moveTo(x - 4, y - 44);
-        ctx.lineTo(x, y - 40);
-        ctx.lineTo(x + 4, y - 44);
-        ctx.closePath();
-        ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - 4, y - 44);
+        this.ctx.lineTo(x, y - 40);
+        this.ctx.lineTo(x + 4, y - 44);
+        this.ctx.closePath();
+        this.ctx.fill();
 
         //text
         if (isEmote) {
-            ctx.fillStyle = "#ffffff";
+            this.ctx.fillStyle = "#ffffff";
         } else {
-            ctx.fillStyle = "#000000";
+            this.ctx.fillStyle = "#000000";
         }
-        ctx.textAlign = "center";
-        ctx.font = this.fontSmall;
-        ctx.fillText(text, x, bubbleY + 10);
+        this.ctx.textAlign = "center";
+        this.ctx.font = this.fontSmall;
+        this.ctx.fillText(text, x, bubbleY + 10);
     }
     debugPoint(
         ctx: any,
@@ -210,10 +209,10 @@ export default class UI {
 
         if (!this.input.isTyping) {
             var isHovered =
-                this.input.mouse.x > x &&
-                this.input.mouse.x < x + width &&
-                this.input.mouse.y > y &&
-                this.input.mouse.y < y + height;
+                this.input.mousePosition.x > x &&
+                this.input.mousePosition.x < x + width &&
+                this.input.mousePosition.y > y &&
+                this.input.mousePosition.y < y + height;
 
             if (isHovered) {
                 this.ctx.strokeStyle = "#000000";
@@ -250,10 +249,10 @@ export default class UI {
         }
 
         var isHovered =
-            this.input.mouse.x > x &&
-            this.input.mouse.x < x + width &&
-            this.input.mouse.y > y &&
-            this.input.mouse.y < y + height;
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < y + height;
 
         if (!isHovered) { //click outside
             this.ctx.strokeStyle = "#000000";
@@ -304,10 +303,10 @@ export default class UI {
         this.ctx.fillText("Asset Id: " + assetId, position.x + 20, position.y + 70);
 
         let isHovered: boolean = (
-            this.input.mouse.x > position.x &&
-            this.input.mouse.x < position.x + width &&
-            this.input.mouse.y > position.y &&
-            this.input.mouse.y < position.y + height
+            this.input.mousePosition.x > position.x &&
+            this.input.mousePosition.x < position.x + width &&
+            this.input.mousePosition.y > position.y &&
+            this.input.mousePosition.y < position.y + height
         )
         return isHovered;
     }
