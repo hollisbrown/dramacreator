@@ -30,6 +30,7 @@ function start() {
 }
 function saveToFile() {
     let data = JSON.stringify(game);
+
     fs.writeFile(file, data, (err: any) => {
         if (err) throw err;
         console.log('game saved');
@@ -120,7 +121,6 @@ function getPlayerId(socket: any): number {
     return -1; //socket not registered
 }
 function setAsset(socket: any, data: any) {
-
     let asset = game.setAsset(data);
     if (asset.id != -1) {
         sendToAll("ASSET", data);

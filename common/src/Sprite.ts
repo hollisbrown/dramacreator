@@ -1,3 +1,5 @@
+import Config from "./Config";
+
 export default class Sprite {
 
     id: number;

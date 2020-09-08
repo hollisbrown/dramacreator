@@ -16,6 +16,7 @@ export default class Camera {
         direction = direction.normalized();
         direction = direction.multiply((Config.camSpeed / this.zoom) * deltaTime);
         this.position = this.position.add(direction);
+        this.position.floor();
     }
 
     setPosition(position: Position) {

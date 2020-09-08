@@ -22,18 +22,23 @@ export default class Builder {
     renderer: Renderer;
     camera: Camera;
 
-    assetList: Asset[];
-    x: number = 940;
-    y: number = 20;
+    x: number = 0;
+    y: number = 60;
     width: number = 330;
-    height: number = 52;
-    padding: number = 6;
+    assetHeight: number = 52;
+    assetPadding: number = 6;
 
     editor: Editor;
+    isEditorEnabled: boolean = false;
     hasTileSelected: boolean = false;
     hasSortableSelected: boolean = false;
     hasSortablePicked: boolean = false;
+    dropdownOptions: string[] = ["All", "Floors", "Walls", "Items", "Characters", "Debug"];
+    dropdownSelection: number = 0;
+    isDropdownHovered: boolean = false;
+    isDropdownEnabled: boolean = false;
 
+    assetList: Asset[];
     selectedAsset: Asset;
     pickedSortable: ISortable;
     send: (type: string, data: any) => void;
@@ -46,7 +51,7 @@ export default class Builder {
         ui: UI,
         renderer: Renderer,
         camera: Camera,
-        send: (type: string, data: any) => void
+        send: (type: string, data: any) => void,
     ) {
         this.canvas = canvas;
         this.ctx = ctx;
@@ -55,20 +60,28 @@ export default class Builder {
         this.ui = ui;
         this.renderer = renderer;
         this.camera = camera;
+        this.send = send;
 
         this.editor = new Editor(canvas, ctx, input, ui, send);
-        this.send = send;
         this.selectedAsset = new Asset(-1, AssetType.NONE);
+        this.assetList = this.game.assets;
     }
     update() {
-        if (this.editor.isEnabled) {
-            this.editor.update();
-            return;
+        if (this.isEditorEnabled) {
+            if (this.editor.isEnabled) {
+                this.editor.update();
+                return;
+            } else {
+                this.isEditorEnabled = false;
+                this.reset();
+            }
         }
+
+        this.x = this.canvas.width - this.width;
         this.background();
         this.mouse();
         this.showAssetList();
-        this.filter();
+        this.showFilter();
     }
     mouse() {
         //Deselect
@@ -99,47 +112,77 @@ export default class Builder {
     }
     background() {
 
-        let x: number = this.x;
-        let y: number = this.y;
-        let w: number = this.width;
-        let h: number = Config.maxAssets * (this.height + this.padding);
-
-        this.ctx.fillStyle = "rgba(0,0,0,0.2)";
-        this.ctx.fillRect(x, y, w, h);
+        let totalHeight = this.assetList.length * (this.assetHeight + this.assetPadding);
+        //this.ctx.fillStyle = "#333333";
+        //this.ctx.fillRect(this.x, this.y, this.width, totalHeight);
 
         let isHovered =
-            this.input.mouse.x > x &&
-            this.input.mouse.x < x + w &&
-            this.input.mouse.y > y &&
-            this.input.mouse.y < y + h;
+            this.input.mouse.x > this.x &&
+            this.input.mouse.x < this.x + this.width &&
+            this.input.mouse.y > this.y &&
+            this.input.mouse.y < this.y + totalHeight;
 
         if (isHovered) {
             this.input.isMouseOnUi = true;
         }
     }
-    filter() {
-        if (this.ui.button("Filter", this.x, this.y, this.width, this.height, "#333333")) {
+    showFilter() {
 
+        let height = 60;
+        if (this.isDropdownEnabled) {
+            height = 260;
+        }
+
+        this.isDropdownHovered = (
+            this.input.mouse.x > this.x &&
+            this.input.mouse.x < this.x + this.width &&
+            this.input.mouse.y > 0 &&
+            this.input.mouse.y < height
+        )
+
+        if (this.isDropdownEnabled) {
+
+            let selection = this.ui.dropDown(
+                this.dropdownOptions,
+                this.dropdownSelection,
+                this.x + 10, 10, this.width - 20, 40, "#444444");
+
+            if (selection != -1) {
+                this.dropdownSelection = selection;
+                this.filterAssetList(this.dropdownSelection);
+                this.isDropdownEnabled = false;
+            }
+
+        } else {
+            if (this.ui.button(
+                this.dropdownOptions[this.dropdownSelection],
+                this.x + 10, 10, this.width - 20, 40, "#333333")
+            ) {
+                this.isDropdownEnabled = true;
+            }
         }
     }
     showAssetList() {
+
+        let isActive = !this.isDropdownEnabled && !this.isDropdownHovered;
+
         //Scroll
         if (this.input.scrollDelta != 0) {
             this.y -= this.input.scrollDelta;
-            let min = 100;
-            let max = Config.maxAssets * (-this.height - this.padding) + 400;
+            let min = 60;
+            let max = -this.assetList.length * (this.assetHeight + this.assetPadding) + this.canvas.height;
             this.y = Math.max(this.y, max);
             this.y = Math.min(this.y, min);
         }
 
         //Draw
-        for (var i = 0; i < Config.maxAssets; i++) {
-            let asset = this.game.assets[i];
-            let img = this.renderer.bufferCanvas[i];
+        for (var i = 0; i < this.assetList.length; i++) {
+            let asset = this.assetList[i];
+            let img = this.renderer.bufferCanvas[asset.id];
             let x = this.x;
-            let y = this.y + i * (this.height + this.padding) + 100;
+            let y = this.y + i * (this.assetHeight + this.assetPadding);
 
-            if (this.ui.asset(img, asset.name, x, y, this.width, this.height, "#111111")) {
+            if (this.ui.asset(img, asset.name, x, y, this.width, this.assetHeight, "#111111") && isActive) {
 
                 this.selectedAsset = asset;
 
@@ -155,19 +198,51 @@ export default class Builder {
                 }
             }
 
-            if (this.ui.button("E", x + 240, y + 10, 30, 30, "#1f1f1f")) {
+            if (this.ui.button("E", x + 200, y + 10, 30, 30, "#1f1f1f") && isActive) {
+                this.isEditorEnabled = true;
                 this.editor.load(asset);
+                this.reset();
             }
 
-            if (this.ui.button("C", x + 280, y + 10, 30, 30, "#1f1f1f")) {
-                let newAsset = new Asset(-1, AssetType.NONE, "Copy of " + asset.name, asset.description);
-                this.editor.load(newAsset);
+            if (this.ui.button("C", x + 240, y + 10, 30, 30, "#1f1f1f") && isActive) {
+                this.isEditorEnabled = true;
+                this.editor.copy(asset);
+                this.reset();
             }
 
-            if (this.selectedAsset.id == i) {
+            if (this.ui.button("D", x + 280, y + 10, 30, 30, "#1f1f1f") && isActive) {
+                asset.isUsed = !asset.isUsed;
+                this.send("ASSET", asset);
+                this.reset();
+            }
+
+            //Highlight selected
+            if (this.selectedAsset.id == asset.id) {
                 this.ctx.lineWidth = 2;
                 this.ctx.strokeStyle = "#AAAAAA";
-                this.ctx.strokeRect(x, y, this.width, this.height);
+                this.ctx.strokeRect(x, y, this.width, this.assetHeight);
+            }
+        }
+    }
+    filterAssetList(selection: number) {
+
+        this.assetList = [];
+        this.y = 60;
+
+        if (selection == 5) {//Debug
+            this.assetList = this.game.assets;
+        } else if (selection == 0) {//All
+            for (var i = 0; i < this.game.assets.length; i++) {
+                if (this.game.assets[i].isUsed) {
+                    this.assetList.push(this.game.assets[i]);
+                }
+            }
+        } else {//Filtered by AssetType
+            for (var i = 0; i < this.game.assets.length; i++) {
+                if (this.game.assets[i].isUsed &&
+                    this.game.assets[i].type == selection) {
+                    this.assetList.push(this.game.assets[i]);
+                }
             }
         }
     }
@@ -291,6 +366,8 @@ export default class Builder {
         )
     }
     reset() {
+        this.filterAssetList(this.dropdownSelection);
+        this.isDropdownEnabled = false;
         this.selectedAsset = new Asset(-1, AssetType.NONE);
         this.hasTileSelected = false;
         this.hasSortableSelected = false;
@@ -298,5 +375,3 @@ export default class Builder {
         this.renderer.hidePick();
     }
 }
-
-

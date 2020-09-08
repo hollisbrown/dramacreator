@@ -27,22 +27,22 @@ export default class Editor {
     selectedTool: number = 0;
     selectedType: number = 0;
 
-    asset: Asset;
+    asset: Asset = new Asset();
     editorAssetTypes = ["None", "Floor", "Wall", "Item", "Character"];
-    onBuild: (type: string, data: any) => void; //callback function
+    send: (type: string, data: any) => void; //callback function
 
     constructor(
         canvas: any,
         ctx: any,
         input: Input,
         ui: UI,
-        onBuild: (type: string, data: any) => void
+        send: (type: string, data: any) => void
     ) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.input = input;
         this.ui = ui;
-        this.onBuild = onBuild;
+        this.send = send;
     }
     update() {
         this.background();
@@ -222,12 +222,23 @@ export default class Editor {
         }
     }
     load(asset: Asset) {
-        this.asset = asset;
+        this.asset = Object.assign(new Asset(), asset);
+        this.selectedTool = 0;
+        this.isEnabled = true;
+    }
+    copy(asset: Asset) {
+        this.asset = Object.assign(new Asset(), asset);
+        this.asset.id = -1;
+        this.asset.name = "Copy of " + asset.name;
+        if (this.asset.name.length > Config.maxNameLength) {
+            this.asset.name = this.asset.name.substr(0, Config.maxNameLength);
+        }
         this.selectedTool = 0;
         this.isEnabled = true;
     }
     save() {
-        this.onBuild("ASSET", this.asset);
+        this.asset.isUsed = true;
+        this.send("ASSET", this.asset);
         this.isEnabled = false;
     }
     background() {

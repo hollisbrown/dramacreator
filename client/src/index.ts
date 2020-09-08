@@ -13,7 +13,6 @@ import Builder from './Builder';
 var socket: any;
 var canvas: any = document.getElementById("canvas");
 var ctx: any = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
 
 var game: Game = new Game();
 var input: Input = new Input(canvas);
@@ -40,9 +39,16 @@ var lastMouseCamera: Position;
 var selectedSortable: ISortable;
 var selectedSortableType: AssetType;
 
+window.addEventListener('resize', resize, false); resize();
 window.onload = function () {
+    resize();
     connect();
     requestAnimationFrame(update);
+}
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.imageSmoothingEnabled = false;
 }
 function connect() {
 
@@ -217,12 +223,12 @@ function updateSpectate(deltaTime: number) {
     }
 }
 function setMode(m: Mode) {
-    console.log("Mode: " + m);
     mode = m;
     switch (mode) {
         case Mode.FREE:
             break;
         case Mode.BUILD:
+            builder.reset();
             break;
         case Mode.PLAY:
             break;

@@ -7,7 +7,6 @@ export default class Position {
         this.x = x;
         this.y = y;
     }
-
     magnitude(): number {
         return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
     }
@@ -32,9 +31,6 @@ export default class Position {
             (1 - amount) * this.y + amount * other.y
         )
     }
-    toString(): string {
-        return " [ " + this.x + " | " + this.y + " ] ";
-    }
     add(other: Position): Position {
         return new Position(
             this.x + other.x,
@@ -58,5 +54,9 @@ export default class Position {
             this.x / num,
             this.y / num
         )
+    }
+    floor() {
+        this.x = Math.floor(this.x);
+        this.y = Math.floor(this.y);
     }
 }

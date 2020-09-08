@@ -152,7 +152,6 @@ export default class UI {
         x: number,
         y: number
     ) {
-
         ctx.lineWidth = 1;
         ctx.strokeStyle = "#ffffff";
         ctx.fillStyle = "#ffffff";

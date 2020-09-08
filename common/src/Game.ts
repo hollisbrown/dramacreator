@@ -17,16 +17,9 @@ export default class Game {
     create() {
         for (var i = 0; i < Config.maxAssets; i++) {
             let sprite = new Sprite(i, Config.pixelsPerRow);
-            let randomColor = Math.floor(Math.random() * 30);
-            sprite.setAllPixels(randomColor);
-
             let asset = new Asset(i, AssetType.NONE, "Unnamed " + i, "Nothing to see here.", sprite);
             this.assets.push(asset);
         }
-
-        this.assets[1].type = AssetType.FLOOR;
-        this.assets[2].type = AssetType.ITEM;
-        this.assets[3].type = AssetType.CHARACTER;
 
         for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
             let tile = new Tile(i, 1);
@@ -80,10 +73,13 @@ export default class Game {
     setAsset(data: any): Asset {
         let asset = Object.assign(new Asset(), data);
         asset.sprite = Object.assign(new Sprite(), asset.sprite);
+        let array = Object.assign(new Array, asset.sprite.pixels); //better way to convert this without the extra step?
+        asset.sprite.pixels = Uint8Array.from(array);
         if (asset.id < 0) {
             for (var i = 0; i < this.assets.length; i++) {
                 if (!this.assets[i].isUsed) {
                     asset.id = i;
+                    asset.isUsed = true;
                     this.assets[i] = asset;
                     return asset;
                 }
