@@ -28,12 +28,10 @@ function start() {
     loadFromFile();
     setInterval(update, 1000);
 }
-
 function update() {
     game.fixedUpdate();
     sendToAll("WALK", game.getPositions());
 }
-
 function saveToFile() {
     let data = JSON.stringify(game);
 
@@ -133,6 +131,7 @@ function getPlayerId(socket: any): number {
     return -1; //socket not registered
 }
 function receiveAsset(socket: any, data: any) {
+
     let asset = game.setAsset(data);
     if (asset.id != -1) {
         sendToAll("ASSET", data);

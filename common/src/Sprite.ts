@@ -1,14 +1,10 @@
 export default class Sprite {
-
-    id: number;
     width: number;
     pixels: Uint8Array;
 
     constructor(
-        id: number = 0,
-        width: number = 0
+        width: number = 32
     ) {
-        this.id = id;
         this.width = width;
         this.pixels = new Uint8Array(this.width * this.width);
     }

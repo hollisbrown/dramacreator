@@ -33,7 +33,7 @@ export default class Builder {
     hasTileSelected: boolean = false;
     hasSortableSelected: boolean = false;
     hasSortablePicked: boolean = false;
-    dropdownOptions: string[] = ["All", "Floors", "Walls", "Items", "Characters", "Debug"];
+    dropdownOptions: string[] = ["All", "Floors", "Walls", "Items", "Characters", "Unused"];
     dropdownSelection: number = 0;
     isDropdownHovered: boolean = false;
     isDropdownEnabled: boolean = false;
@@ -164,6 +164,7 @@ export default class Builder {
     }
     showAssetList() {
 
+        //disable buttons while dropdown
         let isActive = !this.isDropdownEnabled && !this.isDropdownHovered;
 
         //Scroll
@@ -199,14 +200,19 @@ export default class Builder {
             }
 
             if (this.ui.button("E", x + 200, y + 10, 30, 30, "#1f1f1f") && isActive) {
+                let assetCopy = Object.assign(new Asset(), asset);
+                this.editor.load(assetCopy);
                 this.isEditorEnabled = true;
-                this.editor.load(asset);
                 this.reset();
             }
 
             if (this.ui.button("C", x + 240, y + 10, 30, 30, "#1f1f1f") && isActive) {
+                let assetCopy = Object.assign(new Asset(), asset);
+                assetCopy.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
+                //object.assign creates a shallow copy, pixels is an object itself and seems to get passed by reference instead?. 
+                //TODO: get schooled
+                this.editor.copy(assetCopy);
                 this.isEditorEnabled = true;
-                this.editor.copy(asset);
                 this.reset();
             }
 
@@ -229,9 +235,13 @@ export default class Builder {
         this.assetList = [];
         this.y = 60;
 
-        if (selection == 5) {//Debug
-            this.assetList = this.game.assets;
-        } else if (selection == 0) {//All
+        if (selection == 5) {//All Unused
+            for (var i = 0; i < this.game.assets.length; i++) {
+                if (!this.game.assets[i].isUsed) {
+                    this.assetList.push(this.game.assets[i]);
+                }
+            }
+        } else if (selection == 0) {//All used
             for (var i = 0; i < this.game.assets.length; i++) {
                 if (this.game.assets[i].isUsed) {
                     this.assetList.push(this.game.assets[i]);
@@ -253,6 +263,10 @@ export default class Builder {
 
         if (this.hasTileSelected) {
             let worldPosition = this.camera.getWorldPosition(this.input.mousePosition);
+            if (worldPosition.x < 0 || worldPosition.x > Config.pixelsPerRow * Config.tilesPerRow ||
+                worldPosition.y < 0 || worldPosition.y > Config.pixelsPerRow * Config.tilesPerRow) {
+                return;
+            }
             let tilePosition = this.getTilePosition(worldPosition);
             tilePosition = tilePosition.multiply(Config.pixelsPerRow);
 
@@ -368,7 +382,7 @@ export default class Builder {
     reset() {
         this.filterAssetList(this.dropdownSelection);
         this.isDropdownEnabled = false;
-        this.selectedAsset = new Asset(-1, AssetType.NONE);
+        this.selectedAsset = new Asset(-1);
         this.hasTileSelected = false;
         this.hasSortableSelected = false;
         this.hasSortablePicked = false;

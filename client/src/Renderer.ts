@@ -36,7 +36,9 @@ export default class Renderer {
     characterChats: string[] = [];
     characterChatTimers: number[] = [];
     characterLerp: number = 0;
+
     isCharacterWalking: boolean[] = [];
+
 
     constructor(canvas: any, ctx: any, camera: Camera, game: Game, ui: UI) {
 
@@ -74,8 +76,8 @@ export default class Renderer {
 
         switch (asset.type) {
             case AssetType.WALL:
-                let top = new Sprite(0, Config.pixelsPerRow);
-                let corner = new Sprite(0, Config.pixelsPerRow);
+                let top = new Sprite(Config.pixelsPerRow);
+                let corner = new Sprite(Config.pixelsPerRow);
 
                 top.pixels = asset.sprite.getPixelsCropped(0, 0, Config.pixelsPerRow, 5);
                 top.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow, 0, 1);
@@ -91,14 +93,14 @@ export default class Renderer {
 
                 break;
             case AssetType.CHARACTER:
-                let body = new Sprite(0, Config.pixelsPerRow);
-                let footL = new Sprite(0, Config.pixelsPerRow);
-                let footR = new Sprite(0, Config.pixelsPerRow);
+                let body = new Sprite(Config.pixelsPerRow);
+                let footL = new Sprite(Config.pixelsPerRow);
+                let footR = new Sprite(Config.pixelsPerRow);
 
                 body.pixels = asset.sprite.getPixelsCropped(0, 0, 31, 27);
-                footL.pixels = asset.sprite.getPixelsCropped(0, 28, 15, 31);
-                footR.pixels = asset.sprite.getPixelsCropped(15, 28, 31, 31);
-
+                footL.pixels = asset.sprite.getPixelsCropped(0, 27, 15, 31);
+                footR.pixels = asset.sprite.getPixelsCropped(16, 27, 31, 31);
+               
                 //frame 1: idle down
                 footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow, 0, 1);
                 footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow, 0, 1);
@@ -106,21 +108,21 @@ export default class Renderer {
 
                 //frame 2: walk passing
                 footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 2, 0, 1);
-                footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 2, 0, 1);
-                body.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 2, 0, 1);
+                footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 2, -1, 1);
+                body.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 2, -1, 1);
 
                 //frame 3: walk reaching R
                 footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 3, -1, 1);
-                footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 3, 2, 1);
+                footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 3, 1, 1);
                 body.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 3, 1, 1);
 
                 //frame 4: walk passing
-                footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 4, 0, 1);
+                footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 4, -1, 1);
                 footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 4, 0, 1);
-                body.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 4, 0, 1);
+                body.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 4, -1, 1);
 
                 //frame 5: walk reaching L
-                footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 5, 2, 1);
+                footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 5, 1, 1);
                 footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 5, -1, 1);
                 body.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow * 5, 1, 1);
                 break;
@@ -138,7 +140,6 @@ export default class Renderer {
         this.updateTiles();
         this.updateSortables();
         this.updateChat();
-        this.updateTarget();
 
         this.ctx.translate(this.camera.position.x, this.camera.position.y);
         this.ctx.scale(1 / this.camera.zoom, 1 / this.camera.zoom);
@@ -231,7 +232,6 @@ export default class Renderer {
                     renderFrame = Math.floor(this.characterFrames[this.renderStack[i].id] % 4 / 2);
                 }
             }
-
             let x = this.renderStack[i].positionRender.x - this.renderStack[i].offset.x;
             let y = this.renderStack[i].positionRender.y - this.renderStack[i].offset.y;
             if (i == this.pickedSortable) {
@@ -262,19 +262,6 @@ export default class Renderer {
                 );
             }
         }
-    }
-    updateTarget() {
-        // if (controlledCharacter != -1) {
-        //     var x = characters[controlledCharacter].targetX;
-        //     var y = characters[controlledCharacter].targetY;
-        //     ctx.fillStyle = "rgba(0,255,0,0.6)";
-        //     ctx.beginPath();
-        //     ctx.moveTo(x - 5, y - 10);
-        //     ctx.lineTo(x + 5, y - 10);
-        //     ctx.lineTo(x, y);
-        //     ctx.closePath();
-        //     ctx.fill();
-        // }
     }
     getSortableAtPosition(positionMouse: Position): ISortable {
         for (var i = this.renderStack.length - 1; i >= 0; i--) {

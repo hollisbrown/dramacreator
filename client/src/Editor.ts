@@ -43,6 +43,7 @@ export default class Editor {
         this.input = input;
         this.ui = ui;
         this.send = send;
+        this.asset.sprite = new Sprite();
     }
     update() {
         this.background();
@@ -184,10 +185,8 @@ export default class Editor {
         }
     }
     properties(startX: number, startY: number, padding: number, width: number, height: number) {
-
         if (this.isTypingName) {
             this.asset.name = this.input.typedString;
-
             if (this.ui.textBoxActive(startX, startY + 200, width, 60)) {
                 this.input.stopTyping();
                 this.isTypingName = false;
@@ -199,9 +198,7 @@ export default class Editor {
             }
         }
         if (this.isTypingDescription) {
-
             this.asset.description = this.input.typedString;
-
             if (this.ui.textBoxActive(startX, startY + 280, width, 120)) {
                 this.input.stopTyping();
                 this.isTypingDescription = false;
@@ -218,19 +215,28 @@ export default class Editor {
         }
     }
     load(asset: Asset) {
-        this.asset = Object.assign(new Asset(), asset);
+        let newAsset = Object.assign(new Asset(), asset);
+        newAsset.sprite = Object.assign(new Sprite(), asset.sprite);
+        newAsset.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
+
         this.selectedTool = 0;
         this.isEnabled = true;
+        this.asset = newAsset;
     }
     copy(asset: Asset) {
-        this.asset = Object.assign(new Asset(), asset);
-        this.asset.id = -1;
-        this.asset.name = "Copy of " + asset.name;
-        if (this.asset.name.length > Config.maxNameLength) {
-            this.asset.name = this.asset.name.substr(0, Config.maxNameLength);
+        let newAsset = Object.assign(new Asset(), asset);
+        newAsset.sprite = Object.assign(new Sprite(), asset.sprite);
+        newAsset.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
+        newAsset.id = -1;
+        newAsset.name = "Copy of " + asset.name;
+
+        if (newAsset.name.length > Config.maxNameLength) {
+            newAsset.name = newAsset.name.substr(0, Config.maxNameLength);
         }
+
         this.selectedTool = 0;
         this.isEnabled = true;
+        this.asset = newAsset;
     }
     save() {
         this.asset.isUsed = true;
@@ -249,7 +255,6 @@ export default class Editor {
         if (!this.isGridVisible) {
             return;
         }
-
         this.ctx.strokeStyle = "rgba(200,200,200,0.2)";
         this.ctx.beginPath();
 
@@ -259,7 +264,6 @@ export default class Editor {
             this.ctx.moveTo(0, i * Config.editorPixelSize);
             this.ctx.lineTo(Config.pixelsPerRow * Config.editorPixelSize, i * Config.editorPixelSize);
         }
-
         this.ctx.lineWidth = 1;
         this.ctx.stroke();
     }

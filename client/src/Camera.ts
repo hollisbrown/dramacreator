@@ -7,7 +7,7 @@ export default class Camera {
     canvas: HTMLCanvasElement;
 
     constructor(canvas: HTMLCanvasElement) {
-        this.position = new Position(0, 0);
+        this.position = new Position(-100,-100);
         this.zoom = 2;
         this.canvas = canvas;
     }

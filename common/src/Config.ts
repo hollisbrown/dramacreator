@@ -1,13 +1,13 @@
 export default class Config {
 
     static maxPlayers: number = 8;
-    static maxAssets: number = 32;
-    static maxItems: number = 32;
-    static maxCharacters: number = 8;
+    static maxAssets: number = 128;
+    static maxItems: number = 128;
+    static maxCharacters: number = 16;
     static maxNameLength: number = 32;
     static maxDescriptonLength: number = 128;
     static maxFrames = 8;
-    static tilesPerRow: number = 8;
+    static tilesPerRow: number = 32;
     static editorPixelSize = 24;
     static pixelsPerRow: number = 32;
     static pixelsPerImage: number = 1024;

@@ -4,7 +4,6 @@ import Config from '../../common/src/Config';
 export default class Input {
 
     canvas: HTMLCanvasElement;
-
     isMouseClicked: boolean;
     isMouseDown: boolean;
     isMouseUp: boolean;
@@ -18,9 +17,6 @@ export default class Input {
     typedString: string;
     isTyping: boolean;
     isEnter: boolean;
-    isShortcutDebug: boolean;
-    isShortcutFreeMode: boolean;
-    isShortcutBuildMode: boolean;
     isShortcutChat: boolean;
     isShortcutDelete: boolean;
 
@@ -42,9 +38,6 @@ export default class Input {
         this.isMouseDown = false;
         this.isMouseUp = false;
         this.isEnter = false;
-        this.isShortcutDebug = false;
-        this.isShortcutBuildMode = false;
-        this.isShortcutFreeMode = false;
         this.isShortcutChat = false;
         this.isShortcutDelete = false;
         this.scrollDelta = 0;
@@ -78,31 +71,16 @@ export default class Input {
             evt.y - canvasRect.top);
     }
     onKeyDown(evt: any) {
-
         if (evt.key == "Enter") {
             this.isShortcutChat = true;
         }
-
         if (this.isTyping) {
             this.writeInputString(evt);
             return;
         }
-
-        switch (evt.key) {
-            case "1":
-                this.isShortcutFreeMode = true;
-                break;
-            case "2":
-                this.isShortcutBuildMode = true;
-                break;
-            case "Delete":
-                this.isShortcutDelete = true;
-                break;
-            case "Dead":
-                this.isShortcutDebug = true;
-                break;
+        if (evt.key == "Delete") {
+            this.isShortcutDelete = true;
         }
-
         if (evt.key == "a" || evt.key == "ArrowLeft") {
             this.direction.x = -1;
         }

@@ -21,17 +21,15 @@ var camera: Camera = new Camera(canvas);
 var renderer: Renderer = new Renderer(canvas, ctx, camera, game, ui);
 var builder: Builder = new Builder(canvas, ctx, input, game, ui, renderer, camera, send);
 
-
 class Mode {
     static FREE: number = 0;
     static BUILD: number = 1;
     static PLAY: number = 2;
-    static SPECTATE: number = 3;
-    static DEBUG: number = 99;
 }
 var mode: Mode = Mode.FREE;
 var lastTimestamp: number = 0;
 var isChatting: boolean = false;
+var isHoveringModeMenu: boolean = false;
 var isSortableMenu: boolean = false;
 var lastMouse: Position;
 var lastMouseCamera: Position;
@@ -121,13 +119,8 @@ function update(timestamp: number) {
         case Mode.PLAY:
             updatePlay(deltaTime);
             break;
-        case Mode.SPECTATE:
-            updateSpectate(deltaTime);
-            break;
-        case Mode.DEBUG:
-            updateDebug();
-            break;
     }
+    modeMenu();
     input.reset();
     requestAnimationFrame(update);
 }
@@ -136,6 +129,7 @@ function updateFree(deltaTime: number) {
     let isMouseOnSortableMenu: boolean = false;
     camera.movePosition(input.direction, deltaTime);
     camera.setZoom(input.scrollDelta);
+
     if (isSortableMenu) {
         isMouseOnSortableMenu = ui.sortableMenu(lastMouse, selectedSortable.id, selectedSortable.assetId, selectedSortableType);
 
@@ -166,22 +160,16 @@ function updateFree(deltaTime: number) {
             }
         }
     }
-    if (input.isShortcutBuildMode) {
-        setMode(Mode.BUILD);
-    }
-    if (input.isShortcutDebug) {
-        setMode(Mode.DEBUG);
-    }
 }
 function updateBuild(deltaTime: number) {
 
     builder.update();
 
-    if (!builder.editor.isEnabled) {
+    if (!builder.isEditorEnabled) {
 
         camera.movePosition(input.direction, deltaTime);
 
-        if (input.isShortcutFreeMode) {
+        if (ui.button("Free Mode", 10, 10, 120, 50, "#229922")) {
             builder.reset();
             setMode(Mode.FREE);
         }
@@ -207,29 +195,17 @@ function updatePlay(deltaTime: number) {
         ui.textBoxActive(30, canvas.height - 60, 800, 30);
     }
 
-    if (input.isMouseDown) {
-        send("WALK", camera.getWorldPosition(input.mousePosition));
+    if (input.isMouseDown && !isHoveringModeMenu) {
+        let positionTarget = camera.getWorldPosition(input.mousePosition);
+        game.characters[controlledCharacterId].positionTarget = positionTarget;
+        send("WALK", positionTarget);
     }
 
-    if (input.isShortcutFreeMode) {
-        send("CONTROL", -1);
-    }
-}
-function updateSpectate(deltaTime: number) {
-
-}
-function updateDebug() {
-    ctx.fillStyle = "#ffffff"
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (var i = 0; i < renderer.bufferCanvas.length; i++) {
-        ctx.drawImage(renderer.bufferCanvas[i], 50, 50 + i * (Config.pixelsPerRow + 4));
-    }
-    if (input.isShortcutDebug) {
-        setMode(Mode.FREE);
-    }
+    cursorTarget();
 }
 function setMode(m: Mode) {
     mode = m;
+    console.log(mode);
     switch (mode) {
         case Mode.FREE:
             break;
@@ -238,11 +214,39 @@ function setMode(m: Mode) {
             break;
         case Mode.PLAY:
             break;
-        case Mode.SPECTATE:
+    }
+}
+function modeMenu() {
+    let x = 0;
+    let y = 0;
+    let width = 200;
+    let height = 60;
+
+    switch (mode) {
+        case Mode.FREE:
+            x = canvas.width - width;
+            if (ui.button("Build Mode", x, y, width, height, "#992222")) {
+                setMode(Mode.BUILD);
+            }
             break;
-        case Mode.DEBUG:
+        case Mode.PLAY:
+            if (ui.button("Free Mode", x, y, width, height, "#229922")) {
+                send("CONTROL", -1);
+            }
+            break;
+        case Mode.BUILD:
+            if (ui.button("Free Mode", x, y, width, height, "#992222")) {
+                setMode(Mode.FREE);
+            }
             break;
     }
+
+    isHoveringModeMenu = (
+        input.mousePosition.x > x &&
+        input.mousePosition.x < x + width &&
+        input.mousePosition.y > y &&
+        input.mousePosition.y < y + height
+    )
 }
 function send(type: string, data: any) {
     let message = { type, data };
@@ -274,5 +278,18 @@ function receiveChat(data: any) {
     chatLog.push(characterId + ": " + message);
     if (chatLog.length > 4) {
         chatLog.shift();
+    }
+}
+function cursorTarget() {
+    if (controlledCharacterId != -1) {
+        let position = game.characters[controlledCharacterId].positionTarget;
+        position = camera.getScreenPosition(position);
+        ctx.fillStyle = "rgba(0,255,0,0.6)";
+        ctx.beginPath();
+        ctx.moveTo(position.x - 5, position.y - 10);
+        ctx.lineTo(position.x + 5, position.y - 10);
+        ctx.lineTo(position.x, position.y);
+        ctx.closePath();
+        ctx.fill();
     }
 }

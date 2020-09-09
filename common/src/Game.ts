@@ -16,21 +16,20 @@ export default class Game {
 
     create() {
         for (var i = 0; i < Config.maxAssets; i++) {
-            let sprite = new Sprite(i, Config.pixelsPerRow);
+            let sprite = new Sprite(Config.pixelsPerRow);
             let asset = new Asset(i, AssetType.NONE, "Unnamed " + i, "Nothing to see here.", sprite);
             this.assets.push(asset);
         }
-
         for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
-            let tile = new Tile(i, 1);
+            let tile = new Tile(i);
             this.tiles.push(tile);
         }
         for (var i = 0; i < Config.maxItems; i++) {
-            let item = new Item(i, 2, new Position(i * 40, 50 + i * 30));
+            let item = new Item(i);
             this.items.push(item);
         }
         for (var i = 0; i < Config.maxCharacters; i++) {
-            let character = new Character(i, 3);
+            let character = new Character(i);
             this.characters.push(character);
         }
         this.isRunning = true;
@@ -65,7 +64,6 @@ export default class Game {
             character.positionTarget = Object.assign(new Position, data.characters[i].positionTarget);
             this.characters.push(character);
         }
-
         this.isRunning = true;
     }
     fixedUpdate() {
@@ -91,17 +89,17 @@ export default class Game {
         asset.sprite = Object.assign(new Sprite(), asset.sprite);
         let array = Object.assign(new Array, asset.sprite.pixels); //better way to convert this without the extra step?
         asset.sprite.pixels = Uint8Array.from(array);
-        if (asset.id < 0) {
+
+        if (asset.id >= 0 && asset.id < this.assets.length) {
+            this.assets[asset.id] = asset;
+        } else if (asset.id == -1) {
             for (var i = 0; i < this.assets.length; i++) {
                 if (!this.assets[i].isUsed) {
                     asset.id = i;
-                    asset.isUsed = true;
                     this.assets[i] = asset;
                     return asset;
                 }
             }
-        } else if (asset.id < this.assets.length) {
-            this.assets[asset.id] = asset;
         }
         return asset;
     }
@@ -133,8 +131,10 @@ export default class Game {
         character.positionLast = character.position;
         character.positionTarget = character.position;
         character.positionRender = character.position;
-        
-        if (character.id < 0) {
+
+        if (character.id >= 0 && character.id < this.characters.length) {
+            this.characters[character.id] = character;
+        } else if (character.id == -1) {
             for (var i = 0; i < this.characters.length; i++) {
                 if (!this.characters[i].isUsed) {
                     character.id = i;
@@ -142,8 +142,6 @@ export default class Game {
                     return character;
                 }
             }
-        } else if (character.id < this.characters.length) {
-            this.characters[character.id] = character;
         }
         return character;
     }
