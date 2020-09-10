@@ -39,7 +39,6 @@ export default class Renderer {
 
     isCharacterWalking: boolean[] = [];
 
-
     constructor(canvas: any, ctx: any, camera: Camera, game: Game, ui: UI) {
 
         this.canvas = canvas;
@@ -219,7 +218,6 @@ export default class Renderer {
     }
     updateSortables() {
         for (var i = 0; i < this.renderStack.length; i++) {
-
             let renderFrame: number = 0;
             let asset = this.game.assets[this.renderStack[i].assetId];
             if (asset.type == AssetType.CHARACTER) {
@@ -235,9 +233,7 @@ export default class Renderer {
             let y = this.renderStack[i].positionRender.y - this.renderStack[i].offset.y;
             if (i == this.pickedSortable) {
                 this.ctx.globalAlpha = 0.5;
-            } else {
-                this.ctx.globalAlpha = 1;
-            }
+            } 
             this.ctx.drawImage(
                 this.bufferCanvas[asset.id],
                 renderFrame * Config.pixelsPerRow,
@@ -249,6 +245,7 @@ export default class Renderer {
                 Config.pixelsPerRow,
                 Config.pixelsPerRow
             );
+            this.ctx.globalAlpha = 1;
         }
     }
     updateChat() {

@@ -1,9 +1,9 @@
 export default class Config {
 
-    static maxPlayers: number = 8;
-    static maxAssets: number = 128;
-    static maxItems: number = 128;
-    static maxCharacters: number = 16;
+    static maxPlayers: number = 16;
+    static maxAssets: number = 256;
+    static maxItems: number = 1024;
+    static maxCharacters: number = 32;
     static maxNameLength: number = 32;
     static maxDescriptonLength: number = 128;
     static maxFrames = 8;

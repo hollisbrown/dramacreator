@@ -1,7 +1,6 @@
 import Sprite from './Sprite';
 
 export default class Asset {
-
     isUsed: boolean;
     id: number;
     type: number;
@@ -13,7 +12,7 @@ export default class Asset {
         id: number = 0,
         type: number = 0,
         name: string = "_",
-        description: string = "__",
+        description: string = "_",
         sprite: Sprite = new Sprite()
     ) {
         this.id = id;

@@ -4,18 +4,21 @@ import Position from '../../common/src/Position';
 import Input from './Input';
 
 export default class UI {
-
     ctx: any;
     input: Input;
     cursorTimer: number = 0;
-
+    icons: HTMLImageElement;
     fontDefault: string = "15px Courier New";
     fontSmall: string = "8px Courier New";
 
     constructor(ctx: any, input: Input) {
         this.ctx = ctx;
         this.input = input;
+
+        this.icons = new Image();
+        this.icons.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAgCAYAAADaInAlAAACCklEQVR4Xu2Z227EMAhEN///0VmlalYWtc0wGCtd6FsVzGU4xnZ7vOontQJH6uqr+FcBkByCAqAASK5A8vKXToDzPM9Lz+M4lvpN3qPQ8pc2KhKA2zerRkHZV24ZAE9u/l36LgguLXbFYjfERxOvg3v9DgBYUSNzk/rtjLWid+oE0Ebv1RRZdLuGbdqK4nbAGQ0AA5RlzRQApPmXAG3A3hoGAi22Bkgb0yKI5nf2PSKOdTNZ7SEAZg2cFc0K4m2+PPPZPKwwRMVBm4ratXU9GgBmcsiJ1Pvd2ljEnhEf8SuPsdEzm43vAkAjXvs+EoBdNzrzvf6QRu2MISFgm//jx3OmaUVr3/8LAFodngYgcLU2MpY3Ng2AJopn9CK+LeCu8qeNX/bI8kAg7ztWXwUAqNgIIu8OBMP/MVsVlwYASZzdeey6yDvASHBvroiO0qb3SmKnTwFg6IBs9qpdaEjh8zeX+zjy5vD1AHgFQi5g7O6zNL69Uz3mFaAVwI5Hdl3vCPD6ihy/mn4z+GZ5WYD8+glgERmxleevRWzEf88GnWKoXRsDAoBNnH2ieHetd71WLyO05nP03RrLau/+b6BWGLNDerdcLU7vOxMbjXPlGOl/9KJB8rNsABUAJGCEjReCHc2JqHu3z8cCsFuIrPEKgKyd/627ACgAkiuQvPyaAAVAcgWSl18TIDkAb1woED9IsCFAAAAAAElFTkSuQmCC';
     }
+
     button(
         name: string,
         x: number,
@@ -32,6 +35,31 @@ export default class UI {
         this.ctx.textAlign = "center";
         this.ctx.fillStyle = "#FFFFFF";
         this.ctx.fillText(name, x + width / 2, y + height / 2 + 4);
+
+        var isHovered =
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < y + height;
+
+        if (isHovered) {
+            this.ctx.fillStyle = "rgba(255,255,255,0.2)";
+            this.ctx.fillRect(x, y, width, height);
+            return this.input.isMouseClicked;
+        }
+    }
+    buttonIcon(
+        iconId: number,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        color: string
+    ) {
+
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(x, y, width, height);
+        this.ctx.drawImage(this.icons, 32 * iconId, 0, 32, 32, x, y, 32, 32);
 
         var isHovered =
             this.input.mousePosition.x > x &&
@@ -285,7 +313,6 @@ export default class UI {
         }
         return lines;
     }
-
     sortableMenu(position: Position, id: number, assetId: number, assetType: AssetType): boolean {
 
         let width = 200;

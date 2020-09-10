@@ -71,21 +71,23 @@ function addPlayer(socket: any) {
     socket.send(JSON.stringify(message));
 }
 function removePlayer(socket: any) {
-    saveToFile();
-    for (var i = 0; i < players.length; i++) {
+      for (var i = 0; i < players.length; i++) {
         if (players[i].socket == socket) {
             players.splice(i, 1);
             console.log("connected players: " + players.length);
         }
     }
+    socket.close();
     console.log("Player removed ");
+    saveToFile();
 }
 function receive(json: string, socket: any) {
+
+    console.log(json.substring(0,128));
 
     let object = JSON.parse(json);
     let type: string = object.type;
     let data = object.data;
-    let id: number = -1;
     switch (type) {
         case "ASSET":
             receiveAsset(socket, data);
@@ -113,13 +115,17 @@ function receive(json: string, socket: any) {
 function send(socket: any, type: string, data: any) {
     let message = { type, data };
     let messageJSON = JSON.stringify(message);
-    socket.send(messageJSON);
+    if(socket.readyState == WebSocket.OPEN){
+        socket.send(messageJSON);
+    }
 }
 function sendToAll(type: string, data: any) {
     let message = { type, data };
     let messageJSON = JSON.stringify(message);
     for (var i = 0; i < players.length; i++) {
-        players[i].socket.send(messageJSON);
+        if(players[i].socket.readyState == WebSocket.OPEN){
+            players[i].socket.send(messageJSON);
+        }    
     }
 }
 function getPlayerId(socket: any): number {

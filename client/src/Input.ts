@@ -71,6 +71,9 @@ export default class Input {
             evt.y - canvasRect.top);
     }
     onKeyDown(evt: any) {
+        if(evt.key == "Backspace"){
+            evt.preventDefault();
+        }
         if (evt.key == "Enter") {
             this.isShortcutChat = true;
         }
@@ -116,7 +119,6 @@ export default class Input {
                         this.typedString = this.typedString.substring(0, this.typedString.length - 1);
                     }
                     break;
-
                 case 13: //enter
                     this.isEnter = true;
                     break;

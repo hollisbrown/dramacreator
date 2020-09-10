@@ -56,7 +56,9 @@ function connect() {
         socket.onerror = socket.onopen = socket.onclose = null;
         socket.close();
     }
-    socket = new WebSocket("ws://localhost:6969");
+    socket = new WebSocket("ws://195.201.149.187:6969");
+    //socket = new WebSocket("ws://localhost:6969");
+
 
     socket.onopen = function (evt: any) {
         console.log("Connected.");
@@ -80,8 +82,7 @@ function receive(json: string) {
             receiveGame(data);
             break;
         case "ASSET":
-            let asset = game.setAsset(data);
-            renderer.createSprites(game.assets[asset.id]);
+            receiveAsset(data);
             break;
         case "TILE":
             let tile = game.setTile(data);
@@ -97,6 +98,7 @@ function receive(json: string) {
             receiveControl(data);
             break;
         case "CHAT":
+
             receiveChat(data);
             break;
         case "WALK":
@@ -108,6 +110,7 @@ function receive(json: string) {
 function update(timestamp: number) {
     let deltaTime: number = (timestamp - lastTimestamp) / 1000;
     lastTimestamp = timestamp;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     renderer.update(deltaTime);
     switch (mode) {
         case Mode.FREE:
@@ -205,7 +208,6 @@ function updatePlay(deltaTime: number) {
 }
 function setMode(m: Mode) {
     mode = m;
-    console.log(mode);
     switch (mode) {
         case Mode.FREE:
             break;
@@ -261,6 +263,13 @@ function receiveGame(data: any) {
     }
     renderer.setWallFrames();
 }
+function receiveAsset(data: any) {
+    let asset = game.setAsset(data);
+    if(mode == Mode.BUILD){
+        builder.filterAssetList(builder.selectedAsset.type);
+    }
+    renderer.createSprites(game.assets[asset.id]);
+}
 function receiveControl(data: any) {
     controlledCharacterId = parseInt(data);
     console.log("received control: " + controlledCharacterId);
@@ -271,6 +280,9 @@ function receiveControl(data: any) {
     }
 }
 function receiveChat(data: any) {
+
+    console.log(data);
+
     let characterId: number = data.characterId;
     let message: string = data.message;
     renderer.characterChats[characterId] = message;

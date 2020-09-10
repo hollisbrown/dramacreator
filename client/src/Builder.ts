@@ -127,36 +127,31 @@ export default class Builder {
         }
     }
     showFilter() {
-
         let height = 60;
         if (this.isDropdownEnabled) {
             height = 260;
         }
-
         this.isDropdownHovered = (
             this.input.mousePosition.x > this.x &&
             this.input.mousePosition.x < this.x + this.width &&
             this.input.mousePosition.y > 0 &&
             this.input.mousePosition.y < height
         )
-
         if (this.isDropdownEnabled) {
-
             let selection = this.ui.dropDown(
                 this.dropdownOptions,
                 this.dropdownSelection,
-                this.x + 10, 10, this.width - 20, 40, "#444444");
+                this.x, 0, this.width, 60, "#444444");
 
             if (selection != -1) {
                 this.dropdownSelection = selection;
                 this.filterAssetList(this.dropdownSelection);
                 this.isDropdownEnabled = false;
             }
-
         } else {
             if (this.ui.button(
                 this.dropdownOptions[this.dropdownSelection],
-                this.x + 10, 10, this.width - 20, 40, "#333333")
+                this.x, 0, this.width, 60, "#333333")
             ) {
                 this.isDropdownEnabled = true;
             }
@@ -199,14 +194,16 @@ export default class Builder {
                 }
             }
 
-            if (this.ui.button("E", x + 200, y + 10, 30, 30, "#1f1f1f") && isActive) {
+            //Edit
+            if (this.ui.buttonIcon(0, x + 200, y + 10, 32, 32, "#1f1f1f") && isActive) {
                 let assetCopy = Object.assign(new Asset(), asset);
                 this.editor.load(assetCopy);
                 this.isEditorEnabled = true;
                 this.reset();
             }
 
-            if (this.ui.button("C", x + 240, y + 10, 30, 30, "#1f1f1f") && isActive) {
+            //Copy
+            if (this.ui.buttonIcon(1, x + 240, y + 10, 32, 32, "#1f1f1f") && isActive) {
                 let assetCopy = Object.assign(new Asset(), asset);
                 assetCopy.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
                 //object.assign creates a shallow copy, pixels is an object itself and seems to get passed by reference instead?. 
@@ -216,7 +213,8 @@ export default class Builder {
                 this.reset();
             }
 
-            if (this.ui.button("D", x + 280, y + 10, 30, 30, "#1f1f1f") && isActive) {
+            //Delete / Restore
+            if (this.ui.buttonIcon(3, x + 280, y + 10, 32, 32, "#1f1f1f") && isActive) {
                 asset.isUsed = !asset.isUsed;
                 this.send("ASSET", asset);
                 this.reset();
@@ -231,9 +229,6 @@ export default class Builder {
         }
     }
     filterAssetList(selection: number) {
-
-        console.log("filtering for type: " + selection);
-
         this.assetList = [];
         this.y = 60;
 
@@ -308,7 +303,6 @@ export default class Builder {
             case AssetType.WALL:
             case AssetType.FLOOR:
                 let tileId = this.input.mouseTileId(this.camera.position, this.camera.zoom);
-                console.log(tileId);
                 let tile = new Tile(tileId, this.selectedAsset.id);
                 this.send("TILE", tile);
                 break;

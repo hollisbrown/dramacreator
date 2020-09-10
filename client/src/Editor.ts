@@ -18,8 +18,12 @@ export default class Editor {
 
     isEnabled: boolean = false;
     isGridVisible: boolean = true;
-    isMouseOnSprite: boolean;
+    isMouseOnSprite: boolean = false;
     isTranslatingPixels: boolean = false;
+    isDropdownEnabled: boolean = false;
+    isDropdownHovered: boolean = false;
+    dropdownOptions: string[] = ["None", "Floor", "Wall", "Item", "Character"];
+    dropdownSelection: number = 0;
     isTypingName: boolean = false;
     isTypingDescription: boolean = false;
 
@@ -28,7 +32,6 @@ export default class Editor {
     selectedType: number = 0;
 
     asset: Asset = new Asset();
-    editorAssetTypes = ["None", "Floor", "Wall", "Item", "Character"];
     send: (type: string, data: any) => void; //callback function
 
     constructor(
@@ -51,8 +54,8 @@ export default class Editor {
         this.grid();
         this.swatches(790, 16, 4, 42, 42);
         this.tools(940, 16, 4, 120, 50);
-        this.commands(1080, 16, 4, 120, 50);
-        this.properties(940, 300, 4, 250, 600);
+        this.commands();
+        this.properties();
         this.paint();
         this.translate();
     }
@@ -151,8 +154,10 @@ export default class Editor {
         this.ctx.stroke();
     }
     tools(startX: number, startY: number, padding: number, width: number, height: number) {
+
         var x;
         var y;
+
         for (var i = 0; i < this.toolSet.length; i++) {
             x = startX;
             y = i * (height + padding) + startY;
@@ -168,50 +173,91 @@ export default class Editor {
             }
         }
     }
-    commands(startX: number, startY: number, padding: number, width: number, height: number) {
-        var x = startX;
-        var y = startY;
+    commands() {
 
-        if (this.ui.button("GRID", x, y, width, height, "#333333")) {
+        let x = 1080;
+        let y = 16;
+        let padding = 4;
+        let width = 120;
+        let height = 50;
+
+        if (this.ui.button("GRID", x, y, width, height, "#222222")) {
             this.isGridVisible = !this.isGridVisible;
         }
         y += height + padding;
-        if (this.ui.button("CLEAR", x, y, width, height, "#333333")) {
+        if (this.ui.button("CLEAR", x, y, width, height, "#222222")) {
             this.asset.sprite.setAllPixels(0);
         }
-        y += height + padding;
-        if (this.ui.button("SAVE", x, y, width, height, "#333333")) {
+        y += height * 2 + padding;
+        if (this.ui.button("SAVE", x, y, width, height, "#228822")) {
             this.save();
         }
+        y += height + padding;
+        if (this.ui.button("DISCARD", x, y, width, height, "#882222")) {
+            this.close();
+        }
     }
-    properties(startX: number, startY: number, padding: number, width: number, height: number) {
+    properties() {
+
+        let x = 940;
+        let y = 400;
+        let padding = 4;
+        let width = 250;
+        let height = 600;
+
         if (this.isTypingName) {
             this.asset.name = this.input.typedString;
-            if (this.ui.textBoxActive(startX, startY + 200, width, 60)) {
+            if (this.ui.textBoxActive(x, y + 80, width, 60)) {
                 this.input.stopTyping();
                 this.isTypingName = false;
             }
         } else {
-            if (this.ui.textBox(this.asset.name, startX, startY + 200, width, 60)) {
+            if (this.ui.textBox(this.asset.name, x, y + 80, width, 60)) {
                 this.input.startTyping(this.asset.name);
                 this.isTypingName = true;
             }
         }
         if (this.isTypingDescription) {
             this.asset.description = this.input.typedString;
-            if (this.ui.textBoxActive(startX, startY + 280, width, 120)) {
+            if (this.ui.textBoxActive(x, y + 160, width, 120)) {
                 this.input.stopTyping();
                 this.isTypingDescription = false;
             }
         } else {
-            if (this.ui.textBox(this.asset.description, startX, startY + 280, width, 120)) {
+            if (this.ui.textBox(this.asset.description, x, y + 160, width, 120)) {
                 this.input.startTyping(this.asset.description);
                 this.isTypingDescription = true;
             }
         }
-        let dropDownSelection = this.ui.dropDown(this.editorAssetTypes, this.asset.type, startX, startY, 80, 30, "#777777");
-        if (dropDownSelection != -1) {
-            this.asset.type = dropDownSelection;
+
+        let dropdownHeight = 60;
+        if (this.isDropdownEnabled) {
+            dropdownHeight = dropdownHeight * this.dropdownOptions.length;
+        }
+        this.isDropdownHovered = (
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < dropdownHeight
+        )
+        if (this.isDropdownEnabled) {
+            let selection = this.ui.dropDown(
+                this.dropdownOptions,
+                this.dropdownSelection,
+                x, y, width, 60, "#444444");
+
+            if (selection != -1) {
+                this.dropdownSelection = selection;
+                this.asset.type = selection;
+                this.isDropdownEnabled = false;
+            }
+        } else {
+            if (this.ui.button(
+                this.dropdownOptions[this.dropdownSelection],
+                x, y, width, 60, "#333333")
+            ) {
+                this.isDropdownEnabled = true;
+            }
         }
     }
     load(asset: Asset) {
@@ -219,6 +265,7 @@ export default class Editor {
         newAsset.sprite = Object.assign(new Sprite(), asset.sprite);
         newAsset.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
 
+        this.dropdownSelection = newAsset.type;
         this.selectedTool = 0;
         this.isEnabled = true;
         this.asset = newAsset;
@@ -242,6 +289,9 @@ export default class Editor {
     save() {
         this.asset.isUsed = true;
         this.send("ASSET", this.asset);
+        this.isEnabled = false;
+    }
+    close() {
         this.isEnabled = false;
     }
     background() {
