@@ -30,7 +30,7 @@ function start() {
 }
 function update() {
     game.fixedUpdate();
-    sendToAll("WALK", game.getPositions());
+    sendToAll("WALK", game.getCharacterPositions());
 }
 function saveToFile() {
     let data = JSON.stringify(game);
@@ -178,5 +178,5 @@ function receiveChat(socket: any, data: any) {
 function receiveWalkTarget(socket: any, data: any) {
     let playerId = getPlayerId(socket);
     let characterId = players[playerId].characterId;
-    game.setPosition(characterId, data);
+    game.setCharacterTarget(characterId, data);
 }

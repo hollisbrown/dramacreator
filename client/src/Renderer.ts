@@ -73,7 +73,6 @@ export default class Renderer {
     createSprites(asset: Asset) {
         this.bufferCtx[asset.id].clearRect(0, 0, this.bufferCanvas[asset.id].width, this.bufferCanvas[asset.id].height);
         asset.sprite.render(this.bufferCtx[asset.id], Config.colorSet, 0, 0, 1);
-
         switch (asset.type) {
             case AssetType.WALL:
                 let top = new Sprite(Config.pixelsPerRow);
@@ -100,7 +99,7 @@ export default class Renderer {
                 body.pixels = asset.sprite.getPixelsCropped(0, 0, 31, 27);
                 footL.pixels = asset.sprite.getPixelsCropped(0, 27, 15, 31);
                 footR.pixels = asset.sprite.getPixelsCropped(16, 27, 31, 31);
-               
+
                 //frame 1: idle down
                 footL.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow, 0, 1);
                 footR.render(this.bufferCtx[asset.id], Config.colorSet, Config.pixelsPerRow, 0, 1);

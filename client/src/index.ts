@@ -100,7 +100,7 @@ function receive(json: string) {
             receiveChat(data);
             break;
         case "WALK":
-            game.setPositions(data);
+            game.setCharacterPositions(data);
             renderer.characterLerp = 0;
             break;
     }
@@ -235,7 +235,7 @@ function modeMenu() {
             }
             break;
         case Mode.BUILD:
-            if (ui.button("Free Mode", x, y, width, height, "#992222")) {
+            if (!builder.isEditorEnabled && ui.button("Free Mode", x, y, width, height, "#992222")) {
                 setMode(Mode.FREE);
             }
             break;

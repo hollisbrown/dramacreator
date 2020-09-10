@@ -227,6 +227,7 @@ export default class Editor {
         let newAsset = Object.assign(new Asset(), asset);
         newAsset.sprite = Object.assign(new Sprite(), asset.sprite);
         newAsset.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
+
         newAsset.id = -1;
         newAsset.name = "Copy of " + asset.name;
 

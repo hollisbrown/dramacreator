@@ -80,7 +80,13 @@ export default class Game {
                     speed = Config.characterSpeed / 5;
                 }
                 offset = offset.multiply(speed);
-                this.characters[i].position = this.characters[i].position.add(offset);
+                let newPosition = this.characters[i].position.add(offset);
+
+                if (this.getTileType(newPosition) == AssetType.FLOOR) { //check if pos is on floor
+                    this.characters[i].position = newPosition;
+                } else {
+                    this.characters[i].positionTarget = this.characters[i].position;
+                }
             }
         }
     }
@@ -145,23 +151,32 @@ export default class Game {
         }
         return character;
     }
-    setPosition(characterId: number, data: any) {
+    setCharacterTarget(characterId: number, data: any) {
         let positionTarget = Object.assign(new Position(), data);
         this.characters[characterId].positionTarget = positionTarget;
     }
-    setPositions(data: any) {
+    setCharacterPositions(data: any) {
         for (var i = 0; i < this.characters.length; i++) {
             this.characters[i].positionLast = this.characters[i].position;
             this.characters[i].position = Object.assign(new Position(), data[i * 2]);
             this.characters[i].positionTarget = Object.assign(new Position(), data[i * 2 + 1]);
         }
     }
-    getPositions(): Position[] {
+    getCharacterPositions(): Position[] {
         let positions: Position[] = [];
         for (var i = 0; i < this.characters.length; i++) {
             positions.push(this.characters[i].position);
             positions.push(this.characters[i].positionTarget);
         }
         return positions;
+    }
+    getTileType(position: Position): AssetType {
+        let x = Math.floor(position.x / Config.pixelsPerRow);
+        let y = Math.floor(position.y / Config.pixelsPerRow);
+        let id = y * Config.tilesPerRow + x;
+        if (id >= 0 && id < this.tiles.length) {
+            return this.assets[this.tiles[id].assetId].type;
+        }
+        return AssetType.NONE;
     }
 }

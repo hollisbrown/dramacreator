@@ -232,6 +232,8 @@ export default class Builder {
     }
     filterAssetList(selection: number) {
 
+        console.log("filtering for type: " + selection);
+
         this.assetList = [];
         this.y = 60;
 
