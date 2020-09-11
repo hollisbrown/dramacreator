@@ -68,24 +68,23 @@ export default class Game {
     }
     fixedUpdate() {
         for (var i = 0; i < this.characters.length; i++) {
-            if (!this.characters[i].isUsed) {
-                return;
-            }
-            let distanceToTarget = this.characters[i].position.distance(this.characters[i].positionTarget);
-            if (distanceToTarget > 5) {
-                let direction = this.characters[i].positionTarget.subtract(this.characters[i].position);
-                let offset = direction.normalized();
-                let speed = Config.characterSpeed;
-                if (distanceToTarget < 20) {
-                    speed = Config.characterSpeed / 5;
-                }
-                offset = offset.multiply(speed);
-                let newPosition = this.characters[i].position.add(offset);
+            if (this.characters[i].isUsed) {
+                let distanceToTarget = this.characters[i].position.distance(this.characters[i].positionTarget);
+                if (distanceToTarget > 5) {
+                    let direction = this.characters[i].positionTarget.subtract(this.characters[i].position);
+                    let offset = direction.normalized();
+                    let speed = Config.characterSpeed;
+                    if (distanceToTarget < 20) {
+                        speed = Config.characterSpeed / 5;
+                    }
+                    offset = offset.multiply(speed);
+                    let newPosition = this.characters[i].position.add(offset);
 
-                if (this.getTileType(newPosition) == AssetType.FLOOR) { //check if pos is on floor
-                    this.characters[i].position = newPosition;
-                } else {
-                    this.characters[i].positionTarget = this.characters[i].position;
+                    if (this.getTileType(newPosition) == AssetType.FLOOR) { //check if pos is on floor
+                        this.characters[i].position = newPosition;
+                    } else {
+                        this.characters[i].positionTarget = this.characters[i].position;
+                    }
                 }
             }
         }
