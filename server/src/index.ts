@@ -6,7 +6,6 @@ const WebSocket = require('ws');
 const server = http.createServer(express);
 const port = 6969;
 const webSocketServer = new WebSocket.Server({ server });
-const maxConnections = 4;
 
 import Config from '../../common/src/Config';
 import Player from './player';
@@ -15,7 +14,7 @@ import Game from '../../common/src/Game';
 import Asset, { AssetType } from '../../common/src/Asset';
 
 var players: Player[] = [];
-var lastUniqueId: number = 0;
+var uniquePlayerId: number = 0;
 var game: Game = new Game();
 var file: string = './savegame/save.json';
 
@@ -59,16 +58,16 @@ function connect(socket: any) {
     socket.onmessage = function message(evt: any) { receive(evt.data, socket) };
 }
 function addPlayer(socket: any) {
-    if (players.length < maxConnections) {
-        players.push(new Player(socket, lastUniqueId));
-        lastUniqueId++;
+    if (players.length < Config.maxPlayers) {
+        players.push(new Player(socket, uniquePlayerId));
+        uniquePlayerId++;
         console.log("Player added. Number of players: " + players.length);
     } else {
         console.log("Server full. Number of players: " + players.length)
         return;
     }
-    let message = { type: "GAME", data: game };
-    socket.send(JSON.stringify(message));
+    send(socket, "GAME", game);
+    sendToAll("PLAYERS", players.length);
 }
 function removePlayer(socket: any) {
       for (var i = 0; i < players.length; i++) {
@@ -79,6 +78,7 @@ function removePlayer(socket: any) {
     }
     socket.close();
     console.log("Player removed ");
+    sendToAll("PLAYERS", players.length);
     saveToFile();
 }
 function receive(json: string, socket: any) {

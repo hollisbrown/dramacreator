@@ -38,6 +38,10 @@ export default class Renderer {
     characterLerp: number = 0;
 
     isCharacterWalking: boolean[] = [];
+    characterPath: Position[] = [];
+
+    numberOfUsedItems: number = 0;
+    numberOfUsedCharacters: number = 0;
 
     constructor(canvas: any, ctx: any, camera: Camera, game: Game, ui: UI) {
 
@@ -64,7 +68,7 @@ export default class Renderer {
 
         for (var i = 0; i < Config.maxCharacters; i++) {
             this.characterFrames.push(0);
-            this.characterFrameTimers.push(0);
+            this.characterFrameTimers.push(Math.random());
             this.characterChatTimers.push(0);
             this.isCharacterWalking.push(false);
         }
@@ -132,10 +136,13 @@ export default class Renderer {
 
         this.ctx.fillStyle = "#000000";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
 
+
         this.updateTiles();
+        //this.showPath(this.characterPath);
         this.updateSortables();
         this.updateChat();
 
@@ -147,7 +154,6 @@ export default class Renderer {
         if (this.characterLerp > 1) {
             this.characterLerp = 1;
         }
-
         for (var i = 0; i < this.game.characters.length; i++) {
             //animation timers
             this.characterFrameTimers[i] += deltaTime;
@@ -167,10 +173,13 @@ export default class Renderer {
     }
     updateRenderStack() {
         this.renderStack = [];
+        this.numberOfUsedItems = 0;
+        this.numberOfUsedCharacters = 0;
         //Add characters to render stack
         for (var i = 0; i < this.game.characters.length; i++) {
             let character = this.game.characters[i];
             if (character.isUsed) {
+                this.numberOfUsedCharacters++;
                 if (character.position.distance(character.positionLast) > 5) {
                     this.isCharacterWalking[i] = true;
                     character.positionRender = character.positionLast.lerp(character.position, this.characterLerp);
@@ -183,11 +192,14 @@ export default class Renderer {
         }
         //Add items to render stack
         for (var i = 0; i < this.game.items.length; i++) {
-            if (this.game.items[i].isUsed &&
-                this.game.items[i].containerId == 0) {
-                let item = this.game.items[i];
-                this.renderStack.push(item);
+            if (this.game.items[i].isUsed) {
+                this.numberOfUsedItems++;
+                if (this.game.items[i].containerId == 0) {
+                    let item = this.game.items[i];
+                    this.renderStack.push(item);
+                }
             }
+
         }
         //Z sort render stack based on Y position
         this.renderStack.sort(function (a, b) { return a.positionRender.y - b.positionRender.y });
@@ -233,7 +245,7 @@ export default class Renderer {
             let y = this.renderStack[i].positionRender.y - this.renderStack[i].offset.y;
             if (i == this.pickedSortable) {
                 this.ctx.globalAlpha = 0.5;
-            } 
+            }
             this.ctx.drawImage(
                 this.bufferCanvas[asset.id],
                 renderFrame * Config.pixelsPerRow,
@@ -321,5 +333,16 @@ export default class Renderer {
         let tileId = y * Config.tilesPerRow + x;
         let assetId = this.game.tiles[tileId].assetId;
         return this.game.assets[assetId].type;
+    }
+    showPath(path: Position[]) {
+        this.ctx.fillStyle = "rgba(100,255,100,0.1)";
+        for (var i = 0; i < path.length; i++) {        
+            this.ctx.fillRect(
+                path[i].x * Config.pixelsPerRow,
+                path[i].y * Config.pixelsPerRow,
+                Config.pixelsPerRow,
+                Config.pixelsPerRow
+            );
+        }
     }
 }

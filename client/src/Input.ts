@@ -61,7 +61,7 @@ export default class Input {
     onMouseUp(evt: any) {
         this.isMouseUp = true;
         this.isMouseHold = false;
-        this.isMouseRight = false;
+        this.isMouseRight = (evt.button == 2);
     }
     onMouseMove(evt: any) {
         let canvasRect = this.canvas.getBoundingClientRect();
@@ -110,7 +110,7 @@ export default class Input {
     }
     writeInputString(evt: any) {
 
-        if (evt.keyCode >= 32 && evt.keyCode < 220) {
+        if (this.typedString.length < 128 && evt.keyCode >= 32 && evt.keyCode < 220) {
             this.typedString += evt.key;
         } else {
             switch (evt.keyCode) {

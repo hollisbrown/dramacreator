@@ -7,6 +7,12 @@ export default class Position {
         this.x = x;
         this.y = y;
     }
+    equals(other: Position): boolean {
+        return (
+            this.x == other.x &&
+            this.y == other.y
+        )
+    }
     magnitude(): number {
         return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
     }
@@ -55,8 +61,14 @@ export default class Position {
             this.y / num
         )
     }
-    floor() {
+    toFixed() { //current solution to solve graphical aliasing problems
         this.x = Math.floor(this.x * 10) / 10;
         this.y = Math.floor(this.y * 10) / 10;
+    }
+    toTile(tilesPerRow: number): Position {
+        return new Position(
+            Math.floor(this.x / tilesPerRow),
+            Math.floor(this.y / tilesPerRow)
+        );
     }
 }

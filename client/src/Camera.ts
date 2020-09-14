@@ -16,7 +16,7 @@ export default class Camera {
         direction = direction.normalized();
         direction = direction.multiply((Config.camSpeed / this.zoom) * deltaTime);
         this.position = this.position.add(direction);
-        this.position.floor();
+        this.position.toFixed();
     }
 
     setPosition(position: Position) {
@@ -24,7 +24,7 @@ export default class Camera {
         newPosition.x -= this.canvas.width / (2 * this.zoom);
         newPosition.y -= this.canvas.height / (2 * this.zoom);
         this.position = newPosition;
-        this.position.floor();
+        this.position.toFixed();
     }
 
     setZoom(scroll: number) {

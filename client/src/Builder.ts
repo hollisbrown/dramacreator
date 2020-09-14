@@ -26,7 +26,7 @@ export default class Builder {
     y: number = 60;
     width: number = 330;
     assetHeight: number = 52;
-    assetPadding: number = 6;
+    assetPadding: number = 0;
 
     editor: Editor;
     isEditorEnabled: boolean = false;

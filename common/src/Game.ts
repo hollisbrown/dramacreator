@@ -79,8 +79,8 @@ export default class Game {
                     }
                     offset = offset.multiply(speed);
                     let newPosition = this.characters[i].position.add(offset);
-
-                    if (this.getTileType(newPosition) == AssetType.FLOOR) { //check if pos is on floor
+               
+                    if (this.getTileType(newPosition.toTile(Config.tilesPerRow)) == AssetType.FLOOR) {
                         this.characters[i].position = newPosition;
                     } else {
                         this.characters[i].positionTarget = this.characters[i].position;
@@ -170,9 +170,7 @@ export default class Game {
         return positions;
     }
     getTileType(position: Position): AssetType {
-        let x = Math.floor(position.x / Config.pixelsPerRow);
-        let y = Math.floor(position.y / Config.pixelsPerRow);
-        let id = y * Config.tilesPerRow + x;
+        let id = position.y * Config.tilesPerRow + position.x;
         if (id >= 0 && id < this.tiles.length) {
             return this.assets[this.tiles[id].assetId].type;
         }

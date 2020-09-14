@@ -73,6 +73,44 @@ export default class UI {
             return this.input.isMouseClicked;
         }
     }
+    toggle(
+        name: string,
+        nameToggle: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        color: string,
+        isToggle: boolean      
+    ) {
+
+        this.ctx.font = this.fontDefault;
+        this.ctx.textAlign = "center";
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(x, y, width, height);
+
+        if (isToggle) {
+            this.ctx.fillStyle = "rgba(0,0,0,0.2)";
+            this.ctx.fillRect(x, y, width, height);
+            this.ctx.fillStyle = "#FFFFFF";
+            this.ctx.fillText(nameToggle, x + width / 2, y + height / 2 + 4);
+        }else{
+            this.ctx.fillStyle = "#FFFFFF";
+            this.ctx.fillText(name, x + width / 2, y + height / 2 + 4);
+        }
+
+        var isHovered =
+            this.input.mousePosition.x > x &&
+            this.input.mousePosition.x < x + width &&
+            this.input.mousePosition.y > y &&
+            this.input.mousePosition.y < y + height;
+
+        if (isHovered) {
+            this.ctx.fillStyle = "rgba(255,255,255,0.2)";
+            this.ctx.fillRect(x, y, width, height);
+            return this.input.isMouseClicked;
+        }
+    }
     swatch(
         x: number,
         y: number,
@@ -125,7 +163,7 @@ export default class UI {
         this.ctx.font = this.fontDefault;
         this.ctx.fillText(name, x + 60, y + 30);
 
-        var isHovered =
+        let isHovered =
             this.input.mousePosition.x > x &&
             this.input.mousePosition.x < x + width &&
             this.input.mousePosition.y > y &&
@@ -142,24 +180,31 @@ export default class UI {
         x: number,
         y: number
     ) {
-        var width = 8 + text.length * 5;
-        var height = 16;
-        var bubbleX = x - width / 2;
-        var bubbleY = y - 60;
-        var isEmote = text[0] == "*";
+        let offsetY = 40;
+        let lines = this.getTextLines(text, 32);
+        let bubbleWidth = 8 + text.length * 5;
+        if (lines.length > 1) {
+            bubbleWidth = 164;
+        }
+        let lineHeight = 12;
+        let bubbleHeight = (lines.length * lineHeight) + 8;
+        let bubbleX = x - bubbleWidth / 2;
+        let bubbleY = y - bubbleHeight - offsetY;
+        let isEmote = text[0] == "*";
+
         //bubble
         if (isEmote) {
             this.ctx.fillStyle = "rgba(20,20,20,0.75)";
         } else {
             this.ctx.fillStyle = "rgba(255,255,255,0.75)";
         }
-        this.ctx.fillRect(bubbleX, bubbleY, width, height);
+        this.ctx.fillRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
 
         //trunk
         this.ctx.beginPath();
-        this.ctx.moveTo(x - 4, y - 44);
-        this.ctx.lineTo(x, y - 40);
-        this.ctx.lineTo(x + 4, y - 44);
+        this.ctx.moveTo(x - 4, y - offsetY);
+        this.ctx.lineTo(x, y - offsetY + 4);
+        this.ctx.lineTo(x + 4, y - offsetY);
         this.ctx.closePath();
         this.ctx.fill();
 
@@ -169,9 +214,13 @@ export default class UI {
         } else {
             this.ctx.fillStyle = "#000000";
         }
+
         this.ctx.textAlign = "center";
         this.ctx.font = this.fontSmall;
-        this.ctx.fillText(text, x, bubbleY + 10);
+        // this.ctx.fillText(text, x, bubbleY + 10);      
+        for (var i = 0; i < lines.length; i++) {
+            this.ctx.fillText(lines[i], x, bubbleY + 12 + (i * lineHeight));
+        }
     }
     debugPoint(
         ctx: any,
@@ -290,11 +339,11 @@ export default class UI {
     }
     getTextLines(text: string, maxCharactersPerLine: number) {
 
-        var remainingCharacters = text.length;
-        var lines = [];
+        let remainingCharacters = text.length;
+        let lines = [];
         while (remainingCharacters > 0) {
-            var newLine;
-            var lineEnd = maxCharactersPerLine;
+            let newLine;
+            let lineEnd = maxCharactersPerLine;
             if (remainingCharacters > maxCharactersPerLine) {
                 for (var i = lineEnd; i > 0; i--) {
                     if (text[i] == " ") {
