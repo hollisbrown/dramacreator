@@ -1,8 +1,6 @@
-//import LogUtils from '../../common/src/LogUtils'  //import from "common" example
 import Input from './Input';
 import UI from './UI';
 import Renderer, { ISortable } from './Renderer';
-import Editor from './Editor';
 import Game from '../../common/src/Game';
 import Asset, { AssetType } from '../../common/src/Asset';
 import Camera from './Camera';
@@ -10,6 +8,7 @@ import Config from '../../common/src/Config';
 import Position from '../../common/src/Position';
 import Builder from './Builder';
 import Character from '../../common/src/Character';
+import Tile from '../../common/src/Tile';
 
 var socket: any;
 var canvas: any = document.getElementById("canvas");
@@ -116,8 +115,8 @@ function update(timestamp: number) {
     let deltaTime: number = (timestamp - lastTimestamp) / 1000;
     lastTimestamp = timestamp;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     renderer.update(deltaTime);
+
     switch (mode) {
         case Mode.FREE:
             updateFree(deltaTime);
@@ -129,11 +128,15 @@ function update(timestamp: number) {
             updatePlay(deltaTime);
             break;
     }
-    menuMode();
-    showStats();
-    showChatlog();
+
+    if (!builder.isEditorEnabled) {
+        menuMode();
+        showStats();
+        showChatlog();
+    }
 
     input.reset();
+
     requestAnimationFrame(update);
 }
 function updateFree(deltaTime: number) {
@@ -172,21 +175,28 @@ function updatePlay(deltaTime: number) {
     }
 
     if (input.isMouseDown && !isHoveringModeMenu) {
+
         let positionCurrent = game.characters[controlledCharacterId].position;
         let positionTarget = camera.getWorldPosition(input.mousePosition);
 
-        // renderer.characterPath = findPath(
-        //     positionCurrent.toTile(Config.tilesPerRow),
-        //     positionTarget.toTile(Config.tilesPerRow));
+        if (input.isPositionOnTiles(positionTarget)) {
 
-        game.characters[controlledCharacterId].positionTarget = positionTarget;
-        send("WALK", positionTarget);
+            let tileIdStart = input.getTileId(positionCurrent);
+            let tileIdTarget = input.getTileId(positionTarget);
+            let path = getPath(tileIdStart, tileIdTarget);
+            renderer.characterPath = path;
+            if (path.length > 0) {
+                send("PATH", path);
+            }
+        }
+
+        //game.characters[controlledCharacterId].positionTarget = positionTarget;
+        //send("WALK", positionTarget);
     }
 
     cursorTarget();
 }
-function menuSortable(){
-
+function menuSortable() {
     let isMouseOnSortableMenu: boolean = false;
     if (isSortableMenu) {
         isMouseOnSortableMenu = ui.sortableMenu(sortablePositionScreen, selectedSortable.id, selectedSortable.assetId, selectedSortableType);
@@ -223,7 +233,7 @@ function menuMode() {
 
     let width = 180;
     let height = 50;
-    let x = canvas.width / 2 - (width/2);
+    let x = canvas.width / 2 - (width / 2);
     let y = 0;
 
     isHoveringModeMenu = (
@@ -271,6 +281,7 @@ function send(type: string, data: any) {
 function receiveGame(data: any) {
     let gameData = Object.assign(new Game, data);
     game.load(gameData);
+
     for (var i = 0; i < game.assets.length; i++) {
         renderer.createSprites(game.assets[i]);
     }
@@ -285,7 +296,6 @@ function receiveAsset(data: any) {
 }
 function receiveControl(data: any) {
     controlledCharacterId = parseInt(data);
-    console.log("received control: " + controlledCharacterId);
     if (controlledCharacterId == -1) {
         setMode(Mode.FREE);
     } else {
@@ -339,81 +349,68 @@ function showChatlog() {
         ctx.fillText(chatLog[i], x + 20, y + i * 20);
     }
 }
-// function findPath(start: Position, end: Position): Position[] {
-//     let path: Position[] = [];
-//     let unvisited: Position[] = [];
-//     let visited: Position[] = [];
+function getPath(startId: number, targetId: number): number[] {
+    let frontier: number[][] = [];
+    let visited: number[][] = [];
+    let maxIterations: number = 100;
 
-//     path.push(start);
-//     unvisited.push(start);
+    frontier.push([startId, startId]);
+    while (frontier.length > 0) {
 
-//     while (unvisited.length > 0) {
-//         console.log(unvisited.length);
+        let tileId = frontier[0][0];
+        let originId = frontier[0][1];
+        let tile: Tile = game.tiles[tileId];
+        visited.push([tileId, originId]);
+        frontier.splice(0, 1);
 
-//         //find the neighbours of the first tile in UNIVISTED
-//         let neighbours = getNeighbours(unvisited[0]);
+        let neighbourIds = [tile.right, tile.bottom, tile.left, tile.top];
+        for (var i = 0; i < neighbourIds.length; i++) {
+            if (neighbourIds[i] != -1 && game.tiles[neighbourIds[i]].type == AssetType.FLOOR) {
+                let hasNew = true;
+                for (var j = 0; j < visited.length; j++) {
+                    if (visited[j][0] == neighbourIds[i]) {
+                        hasNew = false;
+                    }
+                }
+                for (var j = 0; j < frontier.length; j++) {
+                    if (frontier[j][0] == neighbourIds[i]) {
+                        hasNew = false;
+                    }
+                }
+                if (hasNew) {
+                    frontier.push([neighbourIds[i], tileId]);
+                }
+            }
+        }
 
-//         //move to VISITED
-//         visited.push(unvisited[0]);
-//         //remove from UNVISITED
-//         unvisited.splice(0, 1);
+        if (tile.id == targetId) {
+            let current: number = visited[visited.length - 1][0];
+            let currentOrigin: number = visited[visited.length - 1][1];
+            let trace: number[] = [];
+            trace.push(current);
+            for (var m = 0; m < 10; m++) {
+                for (var i = visited.length - 1; i > 0; i--) {
+                    if (visited[i][0] == currentOrigin) {
+                        trace.push(currentOrigin);
+                        current = visited[i][0];
+                        currentOrigin = visited[i][1];
+                    }
+                }
+            }
 
-//         let winnerId: number = 0;
-//         let winnderDistance: number = neighbours[0].distance(end);
-//         for (var i = 0; i < neighbours.length; i++) {
+            let path: number[] = [];
+            for (var i = 0; i < trace.length; i++) {
+                path.push(trace[trace.length - 1 - i]);
+            }
+            console.log(path);
+            return path;
+        }
 
-//             let isVisited = false;
-//             for (var j = 0; j < visited.length; j++) {
-//                 if (visited[j].equals(neighbours[i])) {
-//                     isVisited = true;
-//                 }
-//             }
-
-//             if (!isVisited) {
-//                 //add to UNIVISTED
-//                 unvisited.push(neighbours[i]);
-
-//                 //also check the winner
-//                 let compareDistance = neighbours[i].distance(end);
-//                 if (compareDistance < winnderDistance) {
-//                     winnerId = i;
-//                     winnderDistance = compareDistance;
-//                 }
-//             }
-//         }
-//         path.push(neighbours[winnerId]);
-//         if (neighbours[winnerId].equals(end)) {
-//             unvisited = [];
-//         }
-//     }
-//     return path;
-// }
-// function getNeighbours(position: Position): Position[] {
-
-//     let neighbours: Position[] = [];
-//     if (position.x < Config.tilesPerRow - 1) {
-//         let right = new Position(position.x + 1, position.y);
-//         if (game.getTileType(right) == AssetType.FLOOR) {
-//             neighbours.push(right);
-//         }
-//     }
-//     if (position.y < Config.tilesPerRow - 1) {
-//         let bottom = new Position(position.x, position.y + 1);
-//         if (game.getTileType(bottom) == AssetType.FLOOR) {
-//             neighbours.push(bottom);
-//         }
-//     }
-//     if (position.x > 0) {
-//         let left = new Position(position.x - 1, position.y);
-//         if (game.getTileType(left) == AssetType.FLOOR) {
-//             neighbours.push(left);
-//         }
-//     }
-//     if (position.y > 0) {
-//         let top = new Position(position.x, position.y - 1);
-//         if (game.getTileType(top) == AssetType.FLOOR) {
-//             neighbours.push(top);
-//         }
-//     }
-//     return neighbours;
-// }
+        //too complicated?
+        maxIterations -= 1;
+        if (maxIterations < 0) {
+            frontier = [];
+        }
+    }
+    return [];
+}

@@ -12,6 +12,7 @@ export default class Game {
     tiles: Tile[] = [];
     items: Item[] = [];
     characters: Character[] = [];
+    characterPaths: number[][] = [];
     isRunning: boolean = false;
 
     create() {
@@ -21,7 +22,10 @@ export default class Game {
             this.assets.push(asset);
         }
         for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
-            let tile = new Tile(i);
+            let x = i % Config.tilesPerRow;
+            let y = Math.floor(i / Config.tilesPerRow);
+            let tile = new Tile(i, 1, AssetType.NONE, new Position(x, y));
+            tile.setNeighbours(Config.tilesPerRow);
             this.tiles.push(tile);
         }
         for (var i = 0; i < Config.maxItems; i++) {
@@ -46,8 +50,13 @@ export default class Game {
         }
         for (var i = 0; i < data.tiles.length; i++) {
             let tile = Object.assign(new Tile, data.tiles[i]);
-            tile.position = Object.assign(new Position, data.tiles[i].position);
-            tile.positionRender = Object.assign(new Position, data.tiles[i].positionRender);
+            tile.type = this.assets[tile.assetId].type;
+
+            let x = i % Config.tilesPerRow;
+            let y = Math.floor(i / Config.tilesPerRow);
+            tile.position = new Position(x, y);
+            tile.positionRender = new Position(x * Config.pixelsPerRow, y * Config.pixelsPerRow);
+            tile.setNeighbours(Config.tilesPerRow);
             this.tiles.push(tile);
         }
         for (var i = 0; i < data.items.length; i++) {
@@ -63,28 +72,19 @@ export default class Game {
             character.positionRender = Object.assign(new Position, data.characters[i].positionRender);
             character.positionTarget = Object.assign(new Position, data.characters[i].positionTarget);
             this.characters.push(character);
+            this.characterPaths.push([]);
         }
         this.isRunning = true;
     }
-    fixedUpdate() {
+    moveCharacters() {
         for (var i = 0; i < this.characters.length; i++) {
             if (this.characters[i].isUsed) {
-                let distanceToTarget = this.characters[i].position.distance(this.characters[i].positionTarget);
-                if (distanceToTarget > 5) {
-                    let direction = this.characters[i].positionTarget.subtract(this.characters[i].position);
-                    let offset = direction.normalized();
-                    let speed = Config.characterSpeed;
-                    if (distanceToTarget < 20) {
-                        speed = Config.characterSpeed / 5;
-                    }
-                    offset = offset.multiply(speed);
-                    let newPosition = this.characters[i].position.add(offset);
-               
-                    if (this.getTileType(newPosition.toTile(Config.tilesPerRow)) == AssetType.FLOOR) {
-                        this.characters[i].position = newPosition;
-                    } else {
-                        this.characters[i].positionTarget = this.characters[i].position;
-                    }
+
+                if (this.characterPaths[i].length > 0) {
+                    let tilePosition = this.tiles[this.characterPaths[i][0]].positionRender
+                    let characterPosition = tilePosition.add(new Position(16, 16));
+                    this.characters[i].position = characterPosition;
+                    this.characterPaths[i].splice(0, 1);
                 }
             }
         }
@@ -110,9 +110,11 @@ export default class Game {
     }
     setTile(data: any): Tile {
         let tile = Object.assign(new Tile(), data);
+        tile.setNeighbours(Config.tilesPerRow);
         if (tile.id >= 0 && tile.id < this.tiles.length) {
             this.tiles[tile.id] = tile;
         }
+
         return tile;
     }
     setItem(data: any): Item {
@@ -153,6 +155,10 @@ export default class Game {
     setCharacterTarget(characterId: number, data: any) {
         let positionTarget = Object.assign(new Position(), data);
         this.characters[characterId].positionTarget = positionTarget;
+    }
+    setCharacterPath(characterId: number, data: any) {
+        this.characterPaths[characterId] = data;
+        console.log(this.characterPaths[characterId]);
     }
     setCharacterPositions(data: any) {
         for (var i = 0; i < this.characters.length; i++) {

@@ -28,7 +28,7 @@ function start() {
     setInterval(update, 1000);
 }
 function update() {
-    game.fixedUpdate();
+    game.moveCharacters();
     sendToAll("WALK", game.getCharacterPositions());
 }
 function saveToFile() {
@@ -70,7 +70,7 @@ function addPlayer(socket: any) {
     sendToAll("PLAYERS", players.length);
 }
 function removePlayer(socket: any) {
-      for (var i = 0; i < players.length; i++) {
+    for (var i = 0; i < players.length; i++) {
         if (players[i].socket == socket) {
             players.splice(i, 1);
             console.log("connected players: " + players.length);
@@ -83,7 +83,7 @@ function removePlayer(socket: any) {
 }
 function receive(json: string, socket: any) {
 
-    console.log(json.substring(0,128));
+    //console.log(json.substring(0,128));
 
     let object = JSON.parse(json);
     let type: string = object.type;
@@ -110,12 +110,15 @@ function receive(json: string, socket: any) {
         case "WALK":
             receiveWalkTarget(socket, data);
             break;
+        case "PATH":
+            receivePath(socket, data);
+            break;
     }
 }
 function send(socket: any, type: string, data: any) {
     let message = { type, data };
     let messageJSON = JSON.stringify(message);
-    if(socket.readyState == WebSocket.OPEN){
+    if (socket.readyState == WebSocket.OPEN) {
         socket.send(messageJSON);
     }
 }
@@ -123,9 +126,9 @@ function sendToAll(type: string, data: any) {
     let message = { type, data };
     let messageJSON = JSON.stringify(message);
     for (var i = 0; i < players.length; i++) {
-        if(players[i].socket.readyState == WebSocket.OPEN){
+        if (players[i].socket.readyState == WebSocket.OPEN) {
             players[i].socket.send(messageJSON);
-        }    
+        }
     }
 }
 function getPlayerId(socket: any): number {
@@ -185,4 +188,9 @@ function receiveWalkTarget(socket: any, data: any) {
     let playerId = getPlayerId(socket);
     let characterId = players[playerId].characterId;
     game.setCharacterTarget(characterId, data);
+}
+function receivePath(socket:any,data:any){
+    let playerId = getPlayerId(socket);
+    let characterId = players[playerId].characterId;
+    game.setCharacterPath(characterId, data);
 }

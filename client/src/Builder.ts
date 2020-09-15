@@ -264,7 +264,7 @@ export default class Builder {
                 worldPosition.y < 0 || worldPosition.y > Config.pixelsPerRow * Config.tilesPerRow) {
                 return;
             }
-            let tilePosition = this.getTilePosition(worldPosition);
+            let tilePosition = this.input.getTilePosition(worldPosition);
             tilePosition = tilePosition.multiply(Config.pixelsPerRow);
 
             position = this.camera.getScreenPosition(tilePosition);
@@ -296,14 +296,14 @@ export default class Builder {
     }
     build() {
         let position = this.camera.getWorldPosition(this.input.mousePosition);
-        if (!this.isPositionOnTiles(position)) {
+        if (!this.input.isPositionOnTiles(position)) {
             return;
         }
         switch (this.selectedAsset.type) {
             case AssetType.WALL:
             case AssetType.FLOOR:
                 let tileId = this.input.mouseTileId(this.camera.position, this.camera.zoom);
-                let tile = new Tile(tileId, this.selectedAsset.id);
+                let tile = new Tile(tileId, this.selectedAsset.id, this.selectedAsset.type);
                 this.send("TILE", tile);
                 break;
             case AssetType.ITEM:
@@ -360,20 +360,6 @@ export default class Builder {
                 break;
         }
         this.reset();
-    }
-    getTilePosition(position: Position) {
-        return new Position(
-            Math.floor(position.x / Config.pixelsPerRow),
-            Math.floor(position.y / Config.pixelsPerRow)
-        );
-    }
-    isPositionOnTiles(position: Position): boolean {
-        return (
-            position.x >= 0 &&
-            position.y >= 0 &&
-            position.x < Config.tilesPerRow * Config.pixelsPerRow &&
-            position.y < Config.tilesPerRow * Config.pixelsPerRow
-        )
     }
     reset() {
         this.filterAssetList(this.dropdownSelection);

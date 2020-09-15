@@ -53,7 +53,7 @@ export default class Editor {
         this.asset.sprite.render(this.ctx, Config.colorSet, 0, 0, Config.editorPixelSize);
         this.grid();
         this.swatches(790, 16, 4, 42, 42);
-        this.tools(940, 16, 4, 120, 50);
+        this.tools();
         this.commands();
         this.properties();
         this.paint();
@@ -153,49 +153,68 @@ export default class Editor {
         this.ctx.lineTo(startX + width, startY + height);
         this.ctx.stroke();
     }
-    tools(startX: number, startY: number, padding: number, width: number, height: number) {
+    tools() {
 
-        var x;
-        var y;
+        let x = 940;
+        let y = 20;
+        let width = 120;
+        let height = 40;
+        let padding = 4;
 
         for (var i = 0; i < this.toolSet.length; i++) {
-            x = startX;
-            y = i * (height + padding) + startY;
 
-            if (this.ui.button(this.toolSet[i], x, y, width, height, "#333333")) {
+            if (this.ui.button(this.toolSet[i], x + (width * i) + padding, y, width, height, "#333333")) {
                 this.selectedTool = i;
             }
             if (i == this.selectedTool) {
                 //cursor
                 this.ctx.lineWidth = 2;
                 this.ctx.strokeStyle = "#ffffff";
-                this.ctx.strokeRect(x, y, width, height);
+                this.ctx.strokeRect(x + (width * i), y, width, height);
             }
         }
     }
     commands() {
 
-        let x = 1080;
-        let y = 16;
-        let padding = 4;
-        let width = 120;
-        let height = 50;
+        let x = 930;
+        let y = 110;
 
-        if (this.ui.button("GRID", x, y, width, height, "#222222")) {
+        let width = 60;
+        let height = 40;
+        let padding = 4;
+
+        if (this.ui.button("UP", x + width / 2 + padding, y, width, height, "#222222")) {
+            this.asset.sprite.pixels = this.asset.sprite.getPixelsTranslated(0, -1);
+        }
+        if (this.ui.button("LEFT", x, y + height + padding, width, height, "#222222")) {
+            this.asset.sprite.pixels = this.asset.sprite.getPixelsTranslated(-1, 0);
+        }
+        if (this.ui.button("RIGHT", x + width + padding, y + height + padding, width, height, "#222222")) {
+            this.asset.sprite.pixels = this.asset.sprite.getPixelsTranslated(1, 0);
+        }
+        if (this.ui.button("DOWN", x + width / 2 + padding, y + (height + padding) * 2, width, height, "#222222")) {
+            this.asset.sprite.pixels = this.asset.sprite.getPixelsTranslated(0, 1);
+        }
+        if (this.ui.button("FLIP", x + width / 2 + padding, y + (height + padding) * 4, width, height, "#222222")) {
+            this.asset.sprite.pixels = this.asset.sprite.getPixelsFlipped();
+        }
+
+        width = 100;
+        height = 50;
+
+        if (this.ui.button("GRID", x + 140, y, width, height, "#222222")) {
             this.isGridVisible = !this.isGridVisible;
         }
-        y += height + padding;
-        if (this.ui.button("CLEAR", x, y, width, height, "#222222")) {
+        if (this.ui.button("CLEAR", x + 140, y + 55, width, height, "#222222")) {
             this.asset.sprite.setAllPixels(0);
         }
-        y += height * 2 + padding;
-        if (this.ui.button("SAVE", x, y, width, height, "#228822")) {
-            this.save();
-        }
-        y += height + padding;
-        if (this.ui.button("DISCARD", x, y, width, height, "#882222")) {
+        if (this.ui.button("DISCARD", x + 140, y + 110, width, height, "#882222")) {
             this.close();
         }
+        if (this.ui.button("SAVE", x + 140, y + 165, width, height, "#228822")) {
+            this.save();
+        }
+
     }
     properties() {
 

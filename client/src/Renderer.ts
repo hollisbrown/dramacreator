@@ -4,9 +4,6 @@ import Position from '../../common/src/Position';
 import Config from '../../common/src/Config';
 import Game from '../../common/src/Game';
 import Asset, { AssetType } from '../../common/src/Asset';
-import Tile from '../../common/src/Tile';
-import Item from '../../common/src/Item';
-import Character from '../../common/src/Character';
 import UI from './UI';
 
 export interface ISortable {
@@ -38,7 +35,7 @@ export default class Renderer {
     characterLerp: number = 0;
 
     isCharacterWalking: boolean[] = [];
-    characterPath: Position[] = [];
+    characterPath: number[] = [];
 
     numberOfUsedItems: number = 0;
     numberOfUsedCharacters: number = 0;
@@ -140,9 +137,8 @@ export default class Renderer {
         this.ctx.scale(this.camera.zoom, this.camera.zoom);
         this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
 
-
         this.updateTiles();
-        //this.showPath(this.characterPath);
+        //this.showPath();
         this.updateSortables();
         this.updateChat();
 
@@ -334,12 +330,17 @@ export default class Renderer {
         let assetId = this.game.tiles[tileId].assetId;
         return this.game.assets[assetId].type;
     }
-    showPath(path: Position[]) {
-        this.ctx.fillStyle = "rgba(100,255,100,0.1)";
-        for (var i = 0; i < path.length; i++) {        
+    showPath() {
+        if (this.characterPath == undefined) {
+            return;
+        }
+
+        this.ctx.fillStyle = "rgba(100,255,100,0.4)";
+        for (var i = 0; i < this.characterPath.length; i++) {
+            let tile = this.game.tiles[this.characterPath[i]];
             this.ctx.fillRect(
-                path[i].x * Config.pixelsPerRow,
-                path[i].y * Config.pixelsPerRow,
+                tile.position.x * Config.pixelsPerRow,
+                tile.position.y * Config.pixelsPerRow,
                 Config.pixelsPerRow,
                 Config.pixelsPerRow
             );

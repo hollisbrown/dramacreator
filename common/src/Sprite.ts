@@ -76,6 +76,17 @@ export default class Sprite {
         }
         return pixelsTranslated;
     }
+    getPixelsFlipped(): Uint8Array {
+        let pixelsFlipped = new Uint8Array(this.width * this.width);
+        for (var i = 0; i < pixelsFlipped.length; i++) {
+            let x = i % this.width;
+            let flippedX = this.width - 1 - x;
+            let y = Math.floor(i / this.width);
+            let flippedIndex = y * this.width + flippedX;
+            pixelsFlipped[i] = this.pixels[flippedIndex];
+        }
+        return pixelsFlipped;
+    }
     getPixelsCombined(pixels: Uint8Array[]): Uint8Array {
         let pixelsCombined = new Uint8Array(pixels[0]);
         for (var j = 0; j < pixels.length - 1; j++) {

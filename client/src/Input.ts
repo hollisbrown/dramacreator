@@ -71,7 +71,7 @@ export default class Input {
             evt.y - canvasRect.top);
     }
     onKeyDown(evt: any) {
-        if(evt.key == "Backspace"){
+        if (evt.key == "Backspace") {
             evt.preventDefault();
         }
         if (evt.key == "Enter") {
@@ -160,6 +160,24 @@ export default class Input {
     mouseTileId(cameraPosition: Position, cameraZoom: number): number {
         let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
         return mouseTile.y * Config.tilesPerRow + mouseTile.x;
+    }
+    getTileId(position: Position) {
+        position = this.getTilePosition(position);
+        return position.y * Config.tilesPerRow + position.x;
+    }
+    getTilePosition(position: Position) {
+        return new Position(
+            Math.floor(position.x / Config.pixelsPerRow),
+            Math.floor(position.y / Config.pixelsPerRow)
+        );
+    }
+    isPositionOnTiles(position: Position): boolean {
+        return (
+            position.x >= 0 &&
+            position.y >= 0 &&
+            position.x < Config.tilesPerRow * Config.pixelsPerRow &&
+            position.y < Config.tilesPerRow * Config.pixelsPerRow
+        )
     }
 }
 
