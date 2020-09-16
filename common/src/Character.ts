@@ -1,3 +1,4 @@
+import Container from "./Container";
 import Position from "./Position";
 
 export default class Character {
@@ -10,12 +11,15 @@ export default class Character {
     positionLast: Position;
     positionTarget: Position;
     bufferCanvas: OffscreenCanvas;
-    offset: Position;
-    
+    offsetRender: Position;
+
+    actionPoints: number;
+    container: Container;
+
     constructor(
         id: number = 0,
         assetId: number = 0,
-        position: Position = new Position(0,0)
+        position: Position = new Position(0, 0)
     ) {
         this.id = id;
         this.assetId = assetId;
@@ -23,8 +27,10 @@ export default class Character {
         this.positionLast = position;
         this.positionRender = position;
         this.positionTarget = position;
-        this.offset = new Position(16, 32);
+        this.offsetRender = new Position(16, 32);
         this.isUsed = false;
+
+        this.container = new Container(3);
     }
 
     lerp(amount: number) {

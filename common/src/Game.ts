@@ -35,7 +35,9 @@ export default class Game {
         for (var i = 0; i < Config.maxCharacters; i++) {
             let character = new Character(i);
             this.characters.push(character);
+            character.actionPoints = Config.maxPoints;
         }
+
         this.isRunning = true;
     }
     load(data: Game) {
@@ -71,22 +73,29 @@ export default class Game {
             character.positionLast = Object.assign(new Position, data.characters[i].positionLast);
             character.positionRender = Object.assign(new Position, data.characters[i].positionRender);
             character.positionTarget = Object.assign(new Position, data.characters[i].positionTarget);
+            character.actionPoints = Config.maxPoints;
             this.characters.push(character);
             this.characterPaths.push([]);
         }
         this.isRunning = true;
     }
-    moveCharacters() {
+    update() {
         for (var i = 0; i < this.characters.length; i++) {
             if (this.characters[i].isUsed) {
 
-                if (this.characterPaths[i].length > 0) {
-                    let tilePosition = this.tiles[this.characterPaths[i][0]].positionRender
-                    let characterPosition = tilePosition.add(new Position(16, 16));
-                    this.characters[i].position = characterPosition;
+                if (this.characterPaths[i].length > 0 && this.characters[i].actionPoints >= Config.pointsWalk) {
+                    this.characters[i].actionPoints -= Config.pointsWalk;
+                    let position = this.tiles[this.characterPaths[i][0]].positionRender;
+                    position = position.add(new Position(16, 16));
+                    this.characters[i].position = position;
                     this.characterPaths[i].splice(0, 1);
                 }
             }
+        }
+    }
+    updateRound() {
+        for (var i = 0; i < this.characters.length; i++) {
+            this.characters[i].actionPoints = Config.maxPoints;
         }
     }
     setAsset(data: any): Asset {
@@ -110,11 +119,11 @@ export default class Game {
     }
     setTile(data: any): Tile {
         let tile = Object.assign(new Tile(), data);
-        tile.setNeighbours(Config.tilesPerRow);
         if (tile.id >= 0 && tile.id < this.tiles.length) {
-            this.tiles[tile.id] = tile;
+            this.tiles[tile.id].assetId = tile.assetId;
+            this.tiles[tile.id].type = tile.type;
+            this.tiles[tile.id].setNeighbours(Config.tilesPerRow);
         }
-
         return tile;
     }
     setItem(data: any): Item {
@@ -158,13 +167,17 @@ export default class Game {
     }
     setCharacterPath(characterId: number, data: any) {
         this.characterPaths[characterId] = data;
-        console.log(this.characterPaths[characterId]);
     }
     setCharacterPositions(data: any) {
         for (var i = 0; i < this.characters.length; i++) {
             this.characters[i].positionLast = this.characters[i].position;
             this.characters[i].position = Object.assign(new Position(), data[i * 2]);
             this.characters[i].positionTarget = Object.assign(new Position(), data[i * 2 + 1]);
+        }
+    }
+    setCharacterActionPoints(data: any) {
+        for (var i = 0; i < this.characters.length; i++) {
+            this.characters[i].actionPoints = data[i];
         }
     }
     getCharacterPositions(): Position[] {
@@ -174,6 +187,9 @@ export default class Game {
             positions.push(this.characters[i].positionTarget);
         }
         return positions;
+    }
+    getCharacterActionPoints(): number[] {
+        return this.characters.map(e => e.actionPoints);
     }
     getTileType(position: Position): AssetType {
         let id = position.y * Config.tilesPerRow + position.x;

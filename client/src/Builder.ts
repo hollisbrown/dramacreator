@@ -33,7 +33,7 @@ export default class Builder {
     hasTileSelected: boolean = false;
     hasSortableSelected: boolean = false;
     hasSortablePicked: boolean = false;
-    dropdownOptions: string[] = ["All", "Floors", "Walls", "Items", "Characters", "Unused"];
+    dropdownOptions: string[] = ["All", "Floors", "Walls", "Items", "Characters", "Deleted"];
     dropdownSelection: number = 0;
     isDropdownHovered: boolean = false;
     isDropdownEnabled: boolean = false;
@@ -77,7 +77,7 @@ export default class Builder {
             }
         }
 
-        this.x = this.canvas.width - this.width;
+        this.x = this.canvas.width - this.width - 140;
         this.background();
         this.mouse();
         this.showAssetList();
@@ -127,6 +127,7 @@ export default class Builder {
         }
     }
     showFilter() {
+        let filterY = 0;
         let height = 60;
         if (this.isDropdownEnabled) {
             height = 260;
@@ -134,14 +135,14 @@ export default class Builder {
         this.isDropdownHovered = (
             this.input.mousePosition.x > this.x &&
             this.input.mousePosition.x < this.x + this.width &&
-            this.input.mousePosition.y > 0 &&
-            this.input.mousePosition.y < height
+            this.input.mousePosition.y > filterY &&
+            this.input.mousePosition.y < filterY + height
         )
         if (this.isDropdownEnabled) {
             let selection = this.ui.dropDown(
                 this.dropdownOptions,
                 this.dropdownSelection,
-                this.x, 0, this.width, 60, "#444444");
+                this.x, filterY, this.width, 60, "#444444");
 
             if (selection != -1) {
                 this.dropdownSelection = selection;
@@ -151,7 +152,7 @@ export default class Builder {
         } else {
             if (this.ui.button(
                 this.dropdownOptions[this.dropdownSelection],
-                this.x, 0, this.width, 60, "#333333")
+                this.x, filterY, this.width, 60, "#333333")
             ) {
                 this.isDropdownEnabled = true;
             }
@@ -195,7 +196,7 @@ export default class Builder {
             }
 
             //Edit
-            if (this.ui.buttonIcon(0, x + 200, y + 10, 32, 32, "#1f1f1f") && isActive) {
+            if (this.ui.buttonIcon(0, x + 240, y + 10, 32, 32, "#1f1f1f") && isActive) {
                 let assetCopy = Object.assign(new Asset(), asset);
                 this.editor.load(assetCopy);
                 this.isEditorEnabled = true;
@@ -203,21 +204,23 @@ export default class Builder {
             }
 
             //Copy
-            if (this.ui.buttonIcon(1, x + 240, y + 10, 32, 32, "#1f1f1f") && isActive) {
-                let assetCopy = Object.assign(new Asset(), asset);
-                assetCopy.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
-                //object.assign creates a shallow copy, pixels is an object itself and seems to get passed by reference instead?. 
-                //TODO: get schooled
-                this.editor.copy(assetCopy);
-                this.isEditorEnabled = true;
-                this.reset();
-            }
-
-            //Delete / Restore
-            if (this.ui.buttonIcon(3, x + 280, y + 10, 32, 32, "#1f1f1f") && isActive) {
-                asset.isUsed = !asset.isUsed;
-                this.send("ASSET", asset);
-                this.reset();
+            if (asset.type != AssetType.NONE) {
+                if (this.ui.buttonIcon(1, x + 280, y + 10, 32, 32, "#1f1f1f") && isActive) {
+                    let assetCopy = Object.assign(new Asset(), asset);
+                    assetCopy.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
+                    //object.assign creates a shallow copy, pixels is an object itself and seems to get passed by reference instead?. 
+                    //TODO: get schooled
+                    this.editor.copy(assetCopy);
+                    this.isEditorEnabled = true;
+                    this.reset();
+                }
+            } else {
+                //Delete / Restore
+                if (this.ui.buttonIcon(3, x + 280, y + 10, 32, 32, "#1f1f1f") && isActive) {
+                    asset.isUsed = !asset.isUsed;
+                    this.send("ASSET", asset);
+                    this.reset();
+                }
             }
 
             //Highlight selected
@@ -232,9 +235,9 @@ export default class Builder {
         this.assetList = [];
         this.y = 60;
 
-        if (selection == 5) {//All Unused
+        if (selection == 5) {//All Deleted
             for (var i = 0; i < this.game.assets.length; i++) {
-                if (!this.game.assets[i].isUsed) {
+                if (this.game.assets[i].type == AssetType.NONE) {
                     this.assetList.push(this.game.assets[i]);
                 }
             }
@@ -279,7 +282,7 @@ export default class Builder {
         } else if (this.hasSortablePicked) {
             position = this.input.mousePosition;
             img = this.renderer.bufferCanvas[this.pickedSortable.assetId];
-            offset = this.pickedSortable.offset;
+            offset = this.pickedSortable.offsetRender;
         } else {
             return;
         }

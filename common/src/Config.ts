@@ -1,19 +1,4 @@
 export default class Config {
-
-    static maxPlayers: number = 16;
-    static maxAssets: number = 256;
-    static maxItems: number = 1024;
-    static maxCharacters: number = 32;
-    static maxNameLength: number = 32;
-    static maxDescriptonLength: number = 128;
-    static maxFrames = 8;
-    static tilesPerRow: number = 32;
-    static editorPixelSize = 24;
-    static pixelsPerRow: number = 32;
-    static pixelsPerImage: number = 1024;
-    static characterSpeed: number = 40;
-    static camSpeed: number = 1000;
-    static fastFramesPerSecond: number = 2;
     static colorSet: string[] = [
         "rgba(0,0,0,0.0)",
         "#b55088", "#f6757a", "#e8b796", "#c28572",
@@ -25,4 +10,21 @@ export default class Config {
         "#2ce8f5", "#0099db", "#124e89", "#193c3e",
         "#265c42", "#3e8948", "#63c74d"
     ]
+    static maxPlayers: number = 16;
+    static maxAssets: number = 256;
+    static maxItems: number = 1024;
+    static maxCharacters: number = 32;
+    static maxNameLength: number = 32;
+    static maxDescriptonLength: number = 128;
+    static maxFrames = 8;
+    static tilesPerRow: number = 32;
+    static editorPixelSize = 24;
+    static pixelsPerRow: number = 32;
+    static pixelsPerImage: number = 1024;
+    static camSpeed: number = 1000;
+
+    static countToRound: number = 20;
+    static maxPoints: number = 50;
+    static pointsWalk: number = 5;
+    static pointsAttack: number = 30;
 }

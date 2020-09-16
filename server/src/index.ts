@@ -17,6 +17,7 @@ var players: Player[] = [];
 var uniquePlayerId: number = 0;
 var game: Game = new Game();
 var file: string = './savegame/save.json';
+var countToRound: number = Config.countToRound;
 
 start();
 
@@ -28,8 +29,16 @@ function start() {
     setInterval(update, 1000);
 }
 function update() {
-    game.moveCharacters();
+    game.update();
+
+    countToRound--;
+    if (countToRound <= 0) {
+        countToRound = Config.countToRound;
+        game.updateRound();
+    }
+
     sendToAll("WALK", game.getCharacterPositions());
+    sendToAll("POINTS", { countToRound: countToRound, points: game.getCharacterActionPoints() });
 }
 function saveToFile() {
     let data = JSON.stringify(game);
@@ -73,18 +82,15 @@ function removePlayer(socket: any) {
     for (var i = 0; i < players.length; i++) {
         if (players[i].socket == socket) {
             players.splice(i, 1);
-            console.log("connected players: " + players.length);
         }
     }
     socket.close();
-    console.log("Player removed ");
+    console.log("Player removed. Number of players: " + players.length);
     sendToAll("PLAYERS", players.length);
     saveToFile();
 }
 function receive(json: string, socket: any) {
-
     //console.log(json.substring(0,128));
-
     let object = JSON.parse(json);
     let type: string = object.type;
     let data = object.data;
@@ -189,7 +195,7 @@ function receiveWalkTarget(socket: any, data: any) {
     let characterId = players[playerId].characterId;
     game.setCharacterTarget(characterId, data);
 }
-function receivePath(socket:any,data:any){
+function receivePath(socket: any, data: any) {
     let playerId = getPlayerId(socket);
     let characterId = players[playerId].characterId;
     game.setCharacterPath(characterId, data);

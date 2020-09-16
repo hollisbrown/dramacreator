@@ -18,7 +18,6 @@ export default class UI {
         this.icons = new Image();
         this.icons.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAgCAYAAADaInAlAAACCklEQVR4Xu2Z227EMAhEN///0VmlalYWtc0wGCtd6FsVzGU4xnZ7vOontQJH6uqr+FcBkByCAqAASK5A8vKXToDzPM9Lz+M4lvpN3qPQ8pc2KhKA2zerRkHZV24ZAE9u/l36LgguLXbFYjfERxOvg3v9DgBYUSNzk/rtjLWid+oE0Ebv1RRZdLuGbdqK4nbAGQ0AA5RlzRQApPmXAG3A3hoGAi22Bkgb0yKI5nf2PSKOdTNZ7SEAZg2cFc0K4m2+PPPZPKwwRMVBm4ratXU9GgBmcsiJ1Pvd2ljEnhEf8SuPsdEzm43vAkAjXvs+EoBdNzrzvf6QRu2MISFgm//jx3OmaUVr3/8LAFodngYgcLU2MpY3Ng2AJopn9CK+LeCu8qeNX/bI8kAg7ztWXwUAqNgIIu8OBMP/MVsVlwYASZzdeey6yDvASHBvroiO0qb3SmKnTwFg6IBs9qpdaEjh8zeX+zjy5vD1AHgFQi5g7O6zNL69Uz3mFaAVwI5Hdl3vCPD6ihy/mn4z+GZ5WYD8+glgERmxleevRWzEf88GnWKoXRsDAoBNnH2ieHetd71WLyO05nP03RrLau/+b6BWGLNDerdcLU7vOxMbjXPlGOl/9KJB8rNsABUAJGCEjReCHc2JqHu3z8cCsFuIrPEKgKyd/627ACgAkiuQvPyaAAVAcgWSl18TIDkAb1woED9IsCFAAAAAAElFTkSuQmCC';
     }
-
     button(
         name: string,
         x: number,
@@ -81,7 +80,7 @@ export default class UI {
         width: number,
         height: number,
         color: string,
-        isToggle: boolean      
+        isToggle: boolean
     ) {
 
         this.ctx.font = this.fontDefault;
@@ -94,7 +93,7 @@ export default class UI {
             this.ctx.fillRect(x, y, width, height);
             this.ctx.fillStyle = "#FFFFFF";
             this.ctx.fillText(nameToggle, x + width / 2, y + height / 2 + 4);
-        }else{
+        } else {
             this.ctx.fillStyle = "#FFFFFF";
             this.ctx.fillText(name, x + width / 2, y + height / 2 + 4);
         }
@@ -257,9 +256,9 @@ export default class UI {
                 return i;
             }
             if (i === selected) {
-                this.ctx.lineWidth = 3;
+                this.ctx.lineWidth = 2;
                 this.ctx.strokeStyle = "#FFFFFF";
-                this.ctx.strokeRect(x, y + (i * height), width, height);
+                this.ctx.strokeRect(x + 1, y + 1 + (i * height), width - 2, height - 2);
             }
         }
         return -1;
@@ -271,10 +270,8 @@ export default class UI {
         width: number,
         height: number,
     ) {
-
         this.ctx.fillStyle = "#ffffff";
         this.ctx.fillRect(x, y, width, height);
-
         this.ctx.font = this.fontDefault;
         this.ctx.textAlign = "left";
         this.ctx.fillStyle = "#000000";
@@ -297,7 +294,6 @@ export default class UI {
                 return this.input.isMouseClicked;
             }
         }
-
     }
     textBoxActive(
         x: number,

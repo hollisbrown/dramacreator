@@ -38,7 +38,11 @@ var selectedSortableType: AssetType;
 
 var numberOfPlayers: number = 0;
 var controlledCharacterId: number = -1;
+var countToRound: number = Config.countToRound;
 var chatLog: string[] = [];
+var vicinity: number[][] = [];
+var lastMouseTileId: number;
+var lastCharacterTileId: number;
 
 window.addEventListener('resize', resize, false); resize();
 window.onload = function () {
@@ -102,12 +106,15 @@ function receive(json: string) {
             receiveControl(data);
             break;
         case "CHAT":
-
             receiveChat(data);
             break;
         case "WALK":
             game.setCharacterPositions(data);
             renderer.characterLerp = 0;
+            break;
+        case "POINTS":
+            countToRound = data.countToRound;
+            game.setCharacterActionPoints(data.points);
             break;
     }
 }
@@ -133,18 +140,16 @@ function update(timestamp: number) {
         menuMode();
         showStats();
         showChatlog();
+        showChat();
+        showRound();
     }
-
     input.reset();
-
     requestAnimationFrame(update);
 }
 function updateFree(deltaTime: number) {
 
-
     camera.movePosition(input.direction, deltaTime);
     camera.setZoom(input.scrollDelta);
-
     menuSortable();
 }
 function updateBuild(deltaTime: number) {
@@ -155,46 +160,48 @@ function updateBuild(deltaTime: number) {
     }
 }
 function updatePlay(deltaTime: number) {
-    let position = game.characters[controlledCharacterId].positionRender;
-    camera.setPosition(position);
-    if (input.isShortcutChat) {
-        if (input.isTyping) {
-            isChatting = false;
-            let message = input.stopTyping();
-            if (message.length > 0) {
-                send("CHAT", message);
-            }
-        } else {
-            isChatting = true;
-            input.startTyping("");
-        }
+
+    //character
+    let character = game.characters[controlledCharacterId];
+    let positionCharacter = character.positionRender;
+    let tileIdCharacter = input.getTileId(positionCharacter);
+
+    if (lastCharacterTileId != tileIdCharacter) {
+        lastCharacterTileId = tileIdCharacter;
+        vicinity = getVicinity(tileIdCharacter);
+        renderer.characterVicinity = vicinity.map(e => e[0]);
     }
 
-    if (isChatting) {
-        ui.textBoxActive(30, canvas.height - 60, 800, 30);
+    //mouse
+    let positionMouseWorld = camera.getWorldPosition(input.mousePosition);
+    let positionMouseTile = input.getTilePosition(positionMouseWorld).multiply(Config.pixelsPerRow);
+    let tileIdMouse = input.getTileId(positionMouseWorld);
+
+    if (lastMouseTileId != tileIdMouse) {
+        let path = getPath(tileIdMouse, vicinity);
+        renderer.characterPath = path;
     }
 
-    if (input.isMouseDown && !isHoveringModeMenu) {
+    camera.setPosition(positionCharacter);
 
-        let positionCurrent = game.characters[controlledCharacterId].position;
-        let positionTarget = camera.getWorldPosition(input.mousePosition);
+    console.log(game.characterPaths[controlledCharacterId]);
+    //walk
+    if (
+        input.isMouseDown &&
+        !isHoveringModeMenu &&
+        input.isPositionOnTiles(positionCharacter) &&
+        input.isPositionOnTiles(positionMouseWorld)
+    ) {
 
-        if (input.isPositionOnTiles(positionTarget)) {
-
-            let tileIdStart = input.getTileId(positionCurrent);
-            let tileIdTarget = input.getTileId(positionTarget);
-            let path = getPath(tileIdStart, tileIdTarget);
+        if (game.characterPaths[controlledCharacterId].length == 0) {
+            let path = getPath(tileIdMouse, vicinity);
             renderer.characterPath = path;
             if (path.length > 0) {
                 send("PATH", path);
             }
         }
-
-        //game.characters[controlledCharacterId].positionTarget = positionTarget;
-        //send("WALK", positionTarget);
     }
-
-    cursorTarget();
+    cursorTile(positionMouseTile);
 }
 function menuSortable() {
     let isMouseOnSortableMenu: boolean = false;
@@ -231,10 +238,11 @@ function menuSortable() {
 }
 function menuMode() {
 
-    let width = 180;
+    let width = 100;
     let height = 50;
-    let x = canvas.width / 2 - (width / 2);
-    let y = 0;
+
+    let x = canvas.width - width - 20;
+    let y = 20;
 
     isHoveringModeMenu = (
         input.mousePosition.x > x &&
@@ -244,11 +252,11 @@ function menuMode() {
     )
 
     if (mode == Mode.PLAY) {
-        if (ui.button("Leave Character", x, y, width, height, "#229922")) {
+        if (ui.button("GM", x, y, width, height, "#119922")) {
             send("CONTROL", -1);
         }
     } else {
-        if (ui.toggle("Open Builder", "Close Builder", x, y, width, height, "#992222", (mode == Mode.BUILD))) {
+        if (ui.toggle("Builder", "Builder", x, y, width, height, "#992222", (mode == Mode.BUILD))) {
             if (mode == Mode.BUILD) {
                 setMode(Mode.FREE);
             } else {
@@ -296,6 +304,7 @@ function receiveAsset(data: any) {
 }
 function receiveControl(data: any) {
     controlledCharacterId = parseInt(data);
+    renderer.controlledCharacterId = controlledCharacterId;
     if (controlledCharacterId == -1) {
         setMode(Mode.FREE);
     } else {
@@ -316,28 +325,26 @@ function receiveChat(data: any) {
         chatLog.shift();
     }
 }
-function cursorTarget() {
-    if (controlledCharacterId != -1) {
-        let position = game.characters[controlledCharacterId].positionTarget;
-        position = camera.getScreenPosition(position);
-        ctx.fillStyle = "rgba(0,255,0,0.6)";
-        ctx.beginPath();
-        ctx.moveTo(position.x - 5, position.y - 10);
-        ctx.lineTo(position.x + 5, position.y - 10);
-        ctx.lineTo(position.x, position.y);
-        ctx.closePath();
-        ctx.fill();
-    }
+function cursorTile(position: Position) {
+    let pos = camera.getScreenPosition(position);
+    ctx.lineWidth = 1 * camera.zoom;
+    ctx.strokeStyle = "#ffffff";
+    ctx.strokeRect(
+        pos.x,
+        pos.y,
+        Config.pixelsPerRow * camera.zoom,
+        Config.pixelsPerRow * camera.zoom
+    );
 }
 function showStats() {
     let x = 20;
-    let y = 20;
+    let y = 140;
     ctx.textAlign = "left";
     ctx.fillStyle = "#ffffff";
     ctx.font = "15px Courier New";
-    ctx.fillText("Items: " + renderer.numberOfUsedItems + "/" + game.items.length, x + 20, y + 20);
-    ctx.fillText("Characters: " + renderer.numberOfUsedCharacters + "/" + game.characters.length, x + 20, y + 40);
-    ctx.fillText("Players: " + numberOfPlayers + "/" + Config.maxPlayers, x + 20, y + 60);
+    ctx.fillText("Items: " + renderer.numberOfUsedItems + "/" + game.items.length, x + 20, y + 30);
+    ctx.fillText("Characters: " + renderer.numberOfUsedCharacters + "/" + game.characters.length, x + 20, y + 50);
+    ctx.fillText("Players: " + numberOfPlayers + "/" + Config.maxPlayers, x + 20, y + 70);
 }
 function showChatlog() {
     let x = 20;
@@ -349,14 +356,64 @@ function showChatlog() {
         ctx.fillText(chatLog[i], x + 20, y + i * 20);
     }
 }
-function getPath(startId: number, targetId: number): number[] {
-    let frontier: number[][] = [];
-    let visited: number[][] = [];
+function showChat() {
+    if (controlledCharacterId == -1) {
+        return;
+    }
+
+    if (input.isShortcutChat) {
+        if (input.isTyping) {
+            isChatting = false;
+            let message = input.stopTyping();
+            if (message.length > 0) {
+                send("CHAT", message);
+            }
+        } else {
+            isChatting = true;
+            input.startTyping("");
+        }
+    }
+    if (isChatting) {
+        ui.textBoxActive(30, canvas.height - 60, 800, 30);
+    }
+}
+function showRound() {
+    if (controlledCharacterId == -1) {
+        return;
+    }
+    let x = 20;
+    let y = 20;
+    let padding = 20;
+    let width = 200;
+    let height = 100;
+    let widthPoint = (width - padding * 2) / Config.maxPoints;
+    let widthRound = (width - padding * 2) / Config.countToRound;
+    let actionPoints = game.characters[controlledCharacterId].actionPoints;
+
+    ctx.fillStyle = "rgba(10,10,20,0.6)";
+    ctx.fillRect(x, y, width, height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Action Points: " + actionPoints, x + 20, y + 20);
+
+    ctx.fillStyle = "rgba(0,0,0,0.5)"
+    ctx.fillRect(x + padding, y + padding * 2, width - padding * 2, 20);
+
+    ctx.fillStyle = "rgba(255,255,255,0.9)"
+    ctx.fillRect(x + padding, y + padding * 2, widthPoint * actionPoints, 20);
+
+    ctx.fillStyle = "rgba(0,0,0,0.5)"
+    ctx.fillRect(x + padding, y + padding * 3.5, width - padding * 2, 5);
+
+    ctx.fillStyle = "rgba(255,255,255,0.7)"
+    ctx.fillRect(x + padding, y + padding * 3.5, widthRound * (Config.countToRound - countToRound), 5);
+}
+function getVicinity(startId: number): number[][] {
+    let frontier: number[][] = [];  // [tile id , origin id]
+    let visited: number[][] = []; // [tile id, origin id]
     let maxIterations: number = 100;
 
     frontier.push([startId, startId]);
-    while (frontier.length > 0) {
-
+    while (frontier.length > 0 && maxIterations > 0) {
         let tileId = frontier[0][0];
         let originId = frontier[0][1];
         let tile: Tile = game.tiles[tileId];
@@ -365,7 +422,11 @@ function getPath(startId: number, targetId: number): number[] {
 
         let neighbourIds = [tile.right, tile.bottom, tile.left, tile.top];
         for (var i = 0; i < neighbourIds.length; i++) {
-            if (neighbourIds[i] != -1 && game.tiles[neighbourIds[i]].type == AssetType.FLOOR) {
+            if (
+                neighbourIds[i] != -1 &&
+                neighbourIds[i] < game.tiles.length &&
+                game.tiles[neighbourIds[i]].type == AssetType.FLOOR
+            ) {
                 let hasNew = true;
                 for (var j = 0; j < visited.length; j++) {
                     if (visited[j][0] == neighbourIds[i]) {
@@ -383,34 +444,42 @@ function getPath(startId: number, targetId: number): number[] {
             }
         }
 
-        if (tile.id == targetId) {
-            let current: number = visited[visited.length - 1][0];
-            let currentOrigin: number = visited[visited.length - 1][1];
+        maxIterations -= 1;
+    }
+    return visited;
+}
+function getPath(targetId: number, vicinity: number[][]): number[] {
+    for (var i = 0; i < vicinity.length; i++) {
+        if (vicinity[i][0] == targetId) {
+            let current: number = vicinity[i][0];
+            let currentOrigin: number = vicinity[i][1];
             let trace: number[] = [];
             trace.push(current);
-            for (var m = 0; m < 10; m++) {
-                for (var i = visited.length - 1; i > 0; i--) {
-                    if (visited[i][0] == currentOrigin) {
+            for (var j = 0; j < 10; j++) {
+                for (var k = vicinity.length - 1; k > 0; k--) {
+                    if (vicinity[k][0] == currentOrigin) {
                         trace.push(currentOrigin);
-                        current = visited[i][0];
-                        currentOrigin = visited[i][1];
+                        current = vicinity[k][0];
+                        currentOrigin = vicinity[k][1];
                     }
                 }
             }
-
             let path: number[] = [];
             for (var i = 0; i < trace.length; i++) {
                 path.push(trace[trace.length - 1 - i]);
             }
-            console.log(path);
             return path;
-        }
-
-        //too complicated?
-        maxIterations -= 1;
-        if (maxIterations < 0) {
-            frontier = [];
         }
     }
     return [];
 }
+// function cursorTarget(position: Position) {
+//     let pos = camera.getScreenPosition(position);
+//     ctx.fillStyle = "rgba(0,255,0,0.6)";
+//     ctx.beginPath();
+//     ctx.moveTo(pos.x - 5 * camera.zoom, pos.y - 10 * camera.zoom);
+//     ctx.lineTo(pos.x + 5 * camera.zoom, pos.y - 10 * camera.zoom);
+//     ctx.lineTo(pos.x, pos.y);
+//     ctx.closePath();
+//     ctx.fill();
+// }

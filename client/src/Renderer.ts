@@ -9,8 +9,9 @@ import UI from './UI';
 export interface ISortable {
     isUsed: boolean;
     id: number;
+    position: Position;
     positionRender: Position;
-    offset: Position;
+    offsetRender: Position;
     assetId: number;
 }
 export default class Renderer {
@@ -34,8 +35,10 @@ export default class Renderer {
     characterChatTimers: number[] = [];
     characterLerp: number = 0;
 
+    controlledCharacterId: number = -1;
     isCharacterWalking: boolean[] = [];
     characterPath: number[] = [];
+    characterVicinity: number[] = [];
 
     numberOfUsedItems: number = 0;
     numberOfUsedCharacters: number = 0;
@@ -138,7 +141,8 @@ export default class Renderer {
         this.ctx.translate(-this.camera.position.x, -this.camera.position.y);
 
         this.updateTiles();
-        //this.showPath();
+        this.showVicinity();
+        this.showPath();
         this.updateSortables();
         this.updateChat();
 
@@ -237,8 +241,14 @@ export default class Renderer {
                     renderFrame = Math.floor(this.characterFrames[this.renderStack[i].id] % 4 / 2);
                 }
             }
-            let x = this.renderStack[i].positionRender.x - this.renderStack[i].offset.x;
-            let y = this.renderStack[i].positionRender.y - this.renderStack[i].offset.y;
+            // // interpolated
+            let x = this.renderStack[i].positionRender.x - this.renderStack[i].offsetRender.x;
+            let y = this.renderStack[i].positionRender.y - this.renderStack[i].offsetRender.y;
+
+            // // debug
+            // let x = this.renderStack[i].position.x - this.renderStack[i].offsetRender.x;
+            // let y = this.renderStack[i].position.y - this.renderStack[i].offsetRender.y;
+
             if (i == this.pickedSortable) {
                 this.ctx.globalAlpha = 0.5;
             }
@@ -270,7 +280,7 @@ export default class Renderer {
     getSortableAtPosition(positionMouse: Position): ISortable {
         for (var i = this.renderStack.length - 1; i >= 0; i--) {
             let positionRender = this.renderStack[i].positionRender;
-            let offset = this.renderStack[i].offset;
+            let offset = this.renderStack[i].offsetRender;
             if (
                 positionMouse.x > positionRender.x - offset.x &&
                 positionMouse.x < positionRender.x + offset.x &&
@@ -330,19 +340,49 @@ export default class Renderer {
         let assetId = this.game.tiles[tileId].assetId;
         return this.game.assets[assetId].type;
     }
-    showPath() {
-        if (this.characterPath == undefined) {
+    showVicinity() {
+        if (
+            this.controlledCharacterId == -1 ||
+            this.characterVicinity == undefined ||
+            this.isCharacterWalking[this.controlledCharacterId]
+        ) {
             return;
         }
 
-        this.ctx.fillStyle = "rgba(100,255,100,0.4)";
+        this.ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        this.ctx.lineWidth = 1;
+        for (var i = 0; i < this.characterVicinity.length; i++) {
+            let tile = this.game.tiles[this.characterVicinity[i]];
+            this.ctx.strokeRect(
+                tile.position.x * Config.pixelsPerRow + 3,
+                tile.position.y * Config.pixelsPerRow + 3,
+                Config.pixelsPerRow - 6,
+                Config.pixelsPerRow - 6
+            );
+        }
+    }
+    showPath() {
+        if (
+            this.controlledCharacterId == -1 ||
+            this.characterPath == undefined ||
+            this.isCharacterWalking[this.controlledCharacterId]
+        ) {
+            return;
+        }
+
+        this.ctx.fillStyle = "rgba(255,255,255,0.2)";
         for (var i = 0; i < this.characterPath.length; i++) {
+
+            if (i >= this.game.characters[this.controlledCharacterId].actionPoints / Config.pointsWalk) {
+                return;
+            }
+
             let tile = this.game.tiles[this.characterPath[i]];
             this.ctx.fillRect(
-                tile.position.x * Config.pixelsPerRow,
-                tile.position.y * Config.pixelsPerRow,
-                Config.pixelsPerRow,
-                Config.pixelsPerRow
+                tile.position.x * Config.pixelsPerRow + 3,
+                tile.position.y * Config.pixelsPerRow + 3,
+                Config.pixelsPerRow - 6,
+                Config.pixelsPerRow - 6
             );
         }
     }

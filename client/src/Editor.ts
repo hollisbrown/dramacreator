@@ -296,7 +296,6 @@ export default class Editor {
 
         newAsset.id = -1;
         newAsset.name = "Copy of " + asset.name;
-
         if (newAsset.name.length > Config.maxNameLength) {
             newAsset.name = newAsset.name.substr(0, Config.maxNameLength);
         }
