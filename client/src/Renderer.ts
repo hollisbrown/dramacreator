@@ -35,6 +35,7 @@ export default class Renderer {
     characterChatTimers: number[] = [];
     characterLerp: number = 0;
 
+
     controlledCharacterId: number = -1;
     isCharacterWalking: boolean[] = [];
     characterPath: number[] = [];
@@ -42,6 +43,10 @@ export default class Renderer {
 
     numberOfUsedItems: number = 0;
     numberOfUsedCharacters: number = 0;
+
+    lookTimer: number = 0;
+    lookText: string;
+    lookPosition: Position;
 
     constructor(canvas: any, ctx: any, camera: Camera, game: Game, ui: UI) {
 
@@ -145,15 +150,23 @@ export default class Renderer {
         this.showPath();
         this.updateSortables();
         this.updateChat();
+        this.showLook();
 
         this.ctx.translate(this.camera.position.x, this.camera.position.y);
         this.ctx.scale(1 / this.camera.zoom, 1 / this.camera.zoom);
+
+
     }
     updateTimers(deltaTime: number) {
         this.characterLerp += deltaTime;
         if (this.characterLerp > 1) {
             this.characterLerp = 1;
         }
+
+        if (this.lookTimer > 0) {
+            this.lookTimer -= deltaTime;
+        }
+
         for (var i = 0; i < this.game.characters.length; i++) {
             //animation timers
             this.characterFrameTimers[i] += deltaTime;
@@ -384,6 +397,11 @@ export default class Renderer {
                 Config.pixelsPerRow - 6,
                 Config.pixelsPerRow - 6
             );
+        }
+    }
+    showLook() {
+        if (this.lookTimer > 0) {
+            this.ui.lookText(this.lookText, this.lookPosition.x, this.lookPosition.y);
         }
     }
 }

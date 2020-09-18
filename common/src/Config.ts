@@ -23,7 +23,7 @@ export default class Config {
     static pixelsPerImage: number = 1024;
     static camSpeed: number = 1000;
 
-    static countToRound: number = 20;
+    static countToRound: number = 10;
     static maxPoints: number = 50;
     static pointsWalk: number = 5;
     static pointsAttack: number = 30;

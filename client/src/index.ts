@@ -33,6 +33,7 @@ var isHoveringModeMenu: boolean = false;
 var isSortableMenu: boolean = false;
 var sortablePositionScreen: Position;
 var sortablePositionWorld: Position;
+var hoveredSortable: ISortable;
 var selectedSortable: ISortable;
 var selectedSortableType: AssetType;
 
@@ -43,6 +44,7 @@ var chatLog: string[] = [];
 var vicinity: number[][] = [];
 var lastMouseTileId: number;
 var lastCharacterTileId: number;
+var lookTimer: number;
 
 window.addEventListener('resize', resize, false); resize();
 window.onload = function () {
@@ -140,7 +142,7 @@ function update(timestamp: number) {
         menuMode();
         showStats();
         showChatlog();
-        showChat();
+        chatInput();
         showRound();
     }
     input.reset();
@@ -172,36 +174,66 @@ function updatePlay(deltaTime: number) {
         renderer.characterVicinity = vicinity.map(e => e[0]);
     }
 
-    //mouse
     let positionMouseWorld = camera.getWorldPosition(input.mousePosition);
     let positionMouseTile = input.getTilePosition(positionMouseWorld).multiply(Config.pixelsPerRow);
     let tileIdMouse = input.getTileId(positionMouseWorld);
 
-    if (lastMouseTileId != tileIdMouse) {
-        let path = getPath(tileIdMouse, vicinity);
-        renderer.characterPath = path;
+    hoveredSortable = renderer.getSortableAtPosition(positionMouseWorld);
+    if (hoveredSortable != null) {
+        cursorSortable(positionMouseWorld);
+        renderer.characterPath = [];
+
+        if (input.isMouseDown && input.isMouseRight) {
+            //look
+            renderer.lookText = game.assets[hoveredSortable.assetId].name + " – " + game.assets[hoveredSortable.assetId].description;
+            renderer.lookPosition = hoveredSortable.position;
+            renderer.lookTimer = 6;
+        }
+
+    } else {
+        if (lastMouseTileId != tileIdMouse) {
+            renderer.characterPath = getPath(tileIdMouse, vicinity);
+        }
+        cursorTile(input.mousePosition, positionMouseTile);
     }
 
     camera.setPosition(positionCharacter);
 
-    console.log(game.characterPaths[controlledCharacterId]);
-    //walk
     if (
         input.isMouseDown &&
+        !input.isMouseRight &&
         !isHoveringModeMenu &&
         input.isPositionOnTiles(positionCharacter) &&
         input.isPositionOnTiles(positionMouseWorld)
     ) {
-
-        if (game.characterPaths[controlledCharacterId].length == 0) {
-            let path = getPath(tileIdMouse, vicinity);
-            renderer.characterPath = path;
-            if (path.length > 0) {
-                send("PATH", path);
-            }
+        //walk
+        let path = getPath(tileIdMouse, vicinity);
+        renderer.characterPath = path;
+        if (path.length > 0) {
+            send("PATH", path);
         }
     }
-    cursorTile(positionMouseTile);
+}
+function chatInput() {
+    if (controlledCharacterId == -1) {
+        return;
+    }
+
+    if (input.isShortcutChat) {
+        if (input.isTyping) {
+            isChatting = false;
+            let message = input.stopTyping();
+            if (message.length > 0) {
+                send("CHAT", message);
+            }
+        } else {
+            isChatting = true;
+            input.startTyping("");
+        }
+    }
+    if (isChatting) {
+        ui.textBoxActive(30, canvas.height - 60, 800, 30);
+    }
 }
 function menuSortable() {
     let isMouseOnSortableMenu: boolean = false;
@@ -325,16 +357,36 @@ function receiveChat(data: any) {
         chatLog.shift();
     }
 }
-function cursorTile(position: Position) {
-    let pos = camera.getScreenPosition(position);
+function cursorTile(positionMouse: Position, positionTile: Position) {
+    let pos = camera.getScreenPosition(positionTile);
+    let size = 5 * camera.zoom;
     ctx.lineWidth = 1 * camera.zoom;
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
     ctx.strokeRect(
         pos.x,
         pos.y,
         Config.pixelsPerRow * camera.zoom,
         Config.pixelsPerRow * camera.zoom
     );
+    ctx.beginPath();
+    ctx.moveTo(positionMouse.x - size, positionMouse.y - size);
+    ctx.lineTo(positionMouse.x + size, positionMouse.y - size);
+    ctx.lineTo(positionMouse.x, positionMouse.y);
+    ctx.closePath();
+    ctx.stroke();
+}
+function cursorSortable(position: Position) {
+    let pos = camera.getScreenPosition(position);
+    let size = 8 * camera.zoom;
+    ctx.lineWidth = 1 * camera.zoom;
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.beginPath();
+    ctx.moveTo(pos.x - size, pos.y);
+    ctx.lineTo(pos.x, pos.y - size);
+    ctx.lineTo(pos.x + size, pos.y);
+    ctx.lineTo(pos.x, pos.y + size);
+    ctx.closePath();
+    ctx.stroke();
 }
 function showStats() {
     let x = 20;
@@ -354,27 +406,6 @@ function showChatlog() {
     ctx.font = "15px Courier New";
     for (var i = 0; i < chatLog.length; i++) {
         ctx.fillText(chatLog[i], x + 20, y + i * 20);
-    }
-}
-function showChat() {
-    if (controlledCharacterId == -1) {
-        return;
-    }
-
-    if (input.isShortcutChat) {
-        if (input.isTyping) {
-            isChatting = false;
-            let message = input.stopTyping();
-            if (message.length > 0) {
-                send("CHAT", message);
-            }
-        } else {
-            isChatting = true;
-            input.startTyping("");
-        }
-    }
-    if (isChatting) {
-        ui.textBoxActive(30, canvas.height - 60, 800, 30);
     }
 }
 function showRound() {
@@ -473,13 +504,3 @@ function getPath(targetId: number, vicinity: number[][]): number[] {
     }
     return [];
 }
-// function cursorTarget(position: Position) {
-//     let pos = camera.getScreenPosition(position);
-//     ctx.fillStyle = "rgba(0,255,0,0.6)";
-//     ctx.beginPath();
-//     ctx.moveTo(pos.x - 5 * camera.zoom, pos.y - 10 * camera.zoom);
-//     ctx.lineTo(pos.x + 5 * camera.zoom, pos.y - 10 * camera.zoom);
-//     ctx.lineTo(pos.x, pos.y);
-//     ctx.closePath();
-//     ctx.fill();
-// }

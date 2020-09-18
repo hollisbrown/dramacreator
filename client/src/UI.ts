@@ -382,4 +382,30 @@ export default class UI {
         )
         return isHovered;
     }
+    lookText(
+        text: string,
+        x: number,
+        y: number
+    ) {
+        let offsetY = 10;
+        let lines = this.getTextLines(text, 32);
+        let bubbleWidth = 8 + text.length * 5;
+        if (lines.length > 1) {
+            bubbleWidth = 164;
+        }
+        let lineHeight = 12;
+        let bubbleHeight = (lines.length * lineHeight) + 8;
+        let bubbleX = x - bubbleWidth / 2;
+        let bubbleY = y - bubbleHeight - offsetY;
+
+        this.ctx.fillStyle = "rgba(20,20,20,0.6)";
+        this.ctx.fillRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.textAlign = "center";
+        this.ctx.font = this.fontSmall;
+
+        for (var i = 0; i < lines.length; i++) {
+            this.ctx.fillText(lines[i], x, bubbleY + 12 + (i * lineHeight));
+        }
+    }
 }
