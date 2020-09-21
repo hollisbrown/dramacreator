@@ -1,13 +1,14 @@
 import Position from "./Position";
-import Asset, { AssetType } from './Asset';
+import Asset, { AssetType, TileType } from './Asset';
 
 export default class Tile {
 
     id: number;
     assetId: number;
-    type: AssetType;
+    type: TileType;
     position: Position;
     positionRender: Position;
+    isWalkable: boolean;
 
     right: number = -1;
     bottomRight: number = -1;
@@ -21,12 +22,14 @@ export default class Tile {
     constructor(
         id: number = 0,
         assetId: number = 0,
-        type: AssetType = AssetType.NONE,
+        type: TileType = TileType.NONE,
+        isWalkable: boolean = false,
         position: Position = new Position
     ) {
         this.id = id;
         this.assetId = assetId;
         this.type = type;
+        this.isWalkable = isWalkable;
         this.position = position;
     }
 

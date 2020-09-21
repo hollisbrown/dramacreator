@@ -16,7 +16,8 @@ export default class UI {
         this.input = input;
 
         this.icons = new Image();
-        this.icons.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAgCAYAAADaInAlAAACCklEQVR4Xu2Z227EMAhEN///0VmlalYWtc0wGCtd6FsVzGU4xnZ7vOontQJH6uqr+FcBkByCAqAASK5A8vKXToDzPM9Lz+M4lvpN3qPQ8pc2KhKA2zerRkHZV24ZAE9u/l36LgguLXbFYjfERxOvg3v9DgBYUSNzk/rtjLWid+oE0Ebv1RRZdLuGbdqK4nbAGQ0AA5RlzRQApPmXAG3A3hoGAi22Bkgb0yKI5nf2PSKOdTNZ7SEAZg2cFc0K4m2+PPPZPKwwRMVBm4ratXU9GgBmcsiJ1Pvd2ljEnhEf8SuPsdEzm43vAkAjXvs+EoBdNzrzvf6QRu2MISFgm//jx3OmaUVr3/8LAFodngYgcLU2MpY3Ng2AJopn9CK+LeCu8qeNX/bI8kAg7ztWXwUAqNgIIu8OBMP/MVsVlwYASZzdeey6yDvASHBvroiO0qb3SmKnTwFg6IBs9qpdaEjh8zeX+zjy5vD1AHgFQi5g7O6zNL69Uz3mFaAVwI5Hdl3vCPD6ihy/mn4z+GZ5WYD8+glgERmxleevRWzEf88GnWKoXRsDAoBNnH2ieHetd71WLyO05nP03RrLau/+b6BWGLNDerdcLU7vOxMbjXPlGOl/9KJB8rNsABUAJGCEjReCHc2JqHu3z8cCsFuIrPEKgKyd/627ACgAkiuQvPyaAAVAcgWSl18TIDkAb1woED9IsCFAAAAAAElFTkSuQmCC';
+        this.icons.src =
+            'data: image / png; base64, iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAIE0lEQVR4Xu1dbZoeJwzLXiH3P + NeYftMn05KKSDJBl4 + nH / JGGNLwgZmdvP1K / 5cjcDX1dlH8r9CAJeLIAQQArgcgcvT71oBvr + /fx48f/ / +3dXv5RwNTb8rUSMF8Pq2ohGiLCPXTQArk / +mPksEDxaz5rIuiHfcVgKwgjpSnDkBM + fykv + MhwJApfchJU86HWMlrUdyr4 + ZpPSey + JPGdMUAEP + A3I6YWmMRQRobiSQdE4FEOS39XzEPOpiUu0pAbQIbCVtBcRLft7zrXGoYhg1D0sqa5fmtbQALJUjr0ilv6vEMvYW8Bm / eRurHbOt87sEgBSPntcAsI6r9XyvP4aomXPkIrCSDzeBKCnv810EwOZZW52MgFibnGwP + S4BIFA8pZfxrWzGevlD5dfasljyS + 0g3++ovswtgAGVsSkFbB03sgXUYvKuQJUwdk / A + jULgJnASqR13AwB1PrvrNWfVtaUA + v8IQBGyf / Y5ML8xOpfZg / A4GZdydZxpQrQk6Qa + NbVx2CY2tRy8eR4fAXwiiknKQXbuwFTBIBIRs9rcx0vAAVkxjYXwIzVz5LL2qV5UgJggGnZqCB5V613PMrXAjTyWXuuzqXau98GosRU8mu7XDRP6bllbnaeB + iR / msnGiY + ZQFAATATjrAp9VplnhnkKPGsarusAFYF7LS4QgCnMSrmEwIQATvNPARwGqNiPiEAEbDTzEMApzEq5hMCEAE7zTwEcBqjYj4hABGw08xDAKcxKuYTAhABO808BLAJo8oLHiUlkwBqL2riBYwCPWc7GmtZAOgtXYiAIxZZMZ9 / PT68eEsCaH1soH6IgAC4 / TnCs9eXSbQAUEAPYYzN7cSy + ac9v9X / vUKQBYBKzqjNCgvcKXYlHEcIYVsBeJXvFcro + RmyS4tRjUsWANp4jK4At2xCGRwZkSC + aAEwK4YJmvFTskHKRs + t877jkPBy / 6hVongULGv7BcZHNwGM2gCqxKr2iIhPPWfIy2N7xqi / GqeLAEaQ7yXSOz4 / 1XiFoFaEbQTQm / wexKVk9fbnFQI7fgsB9CR / NFHIv9rjWSJrdqgibCUAlIwCFiJK8VUq4z1jVWNR7LcSADpqKInXdt0qcV4h9a4I1viVcdM3gT1bQE0kKpGqvUWcM8ZsUQFmAMFWhNHEqxVBWbmtew / Fz / QKMFMA7IWMAtgn4mfntFTXKwTAVgQWaKvd6Ipj2cBOF8DPz8 / f / 0PI19dXlwslKxmnj2PFNlUAL / kv + CGC8TJEQpgmgJz8EMF48tMZakKYJoAnmKgAc0lvnRTSZ88mGFWK1N7Vu2MP8HkRlDaLb1TMicglgDXSjyjykxFD / J + 2HfDdjUBUgLv5x / 9r2OX4HJ9 + VIDjKW4nGAIIAeyLgOWV6b7Zjol82wqgXHb0hq72alg5fvWOyerPLIAbCWC / CdhJCLIAEAgzks9L / 4xWwLyfZ2zYlYpwZv2gW0FJAK0EeybfSq5G9mgRsP5ZOyZHlWTGPl + gJgHUVnmP5FESnxCAmpdqn + fsHZ9eDb9c1XyaBPBMkIvg5AqgEqLapwLwjE39PC / q8m80Sr4lATwTlIieRX46f02AI / YgpT1HaX602lB1a + XHjJ0igFKQvVTLJLlCC3hiCAEkbeA2ASChWvGwjivtIVq / PCJ9JreAqACI / n / bpNqOQgAY2z97kFl7AMv + xjKG6f / 53UDrNFb6PQGlOwG5Aty0CcxzRSs0fW4RAeM / 3WgiAeSf7HU9BcxagewZGYFHFJf / mLQIzFdi7bZNFUHNbxpYftJo5cVwJFUAFhS19ynkzDoF9BKU4gfZpqeP0kmkdAGE7hhoATBqZmwUstOE8nGti6jailTmRmSwvhQ / yNa6B8hxlE8BCrGKLQOipdyWSiYzF1otqg9mYzdqzm7HQAuhljE1cEurghEFWk2ITO / 41qpTckVxlp7X2oO8CfQQ6RnbY1V4CfSOP0oA1k1dDxAtQrKMqZ02nn / 35s / 66IHX23a6tABvQN7xrU0gUxqtxFlWb60Us + Sr + 4VW / t1bgBXIXgJIwant8NkdMiMcpgWh + Sy5W8Ywe4BWRWweAz2l1DMWqbu0qnqB12oFqniU1Z + L3Lro0haARPrYwnsAxklpxdRWqgVEZUV6gGPLeC621klFiad2uvFi1ooBCqBUftmAlORZn7X + 1tr8sL4 / LQAP1qXYGfwpAeSbIgQoMzHyUXteK / UzWsCTV6m15f82qv1ZMWuNkwQwIgDVJyqTI8RXmnP0VbSKi9V + OwG0yuQI8q3A7jJuSwHsAu4OcYYAdmBpYIwhgIHg7uA6BLADSwNjDAEMBHcH1yGAHVgaGKNZAOoV8cAcwrUDAZMAapcxcQ53MPGhoZQA0MsP9PxDucW0BAJQAKVS3yI8WgOB + kIm1PcApR9GaN2F5 / bRGhZiPAulKgD1rZtqvy4kd0UmC0CFZ9RrWjWOsC8jILUAFcQgX0Vsvj29CUTvv5kfRJyfXsyIECgKAH0AwdwDIB8osHg + B4H / CQAd45hPotLQkb85acYsNQSqAmj98oHHmVryYz + wpghDAGvyMi2qaAHToF5zotgErsnLtKjiGDgN6jUniougNXmZFlVcBU + Des2JZAGoL33i + Lcm8W9UUgto / cxb64IoXgevKwJ6E / imkP6AZOm9f9z8rUt2KTIogGcQ + uQLPd8LkruipQSQQ8K8DLoLxn2zNQkgrQppa9gXhnsjNwvgXsjOyjwEcBafcjYhABmyswaEAM7iU87mL1bziPlboNH7AAAAAElFTkSuQmCC'
     }
     button(
         name: string,
@@ -53,12 +54,25 @@ export default class UI {
         y: number,
         width: number,
         height: number,
-        color: string
+        color: string,
+        isSelected: boolean = false
     ) {
+
+        let spritesheetRows = 4;
+        let spritesheetX = iconId % spritesheetRows;
+        let spritesheetY = Math.floor(iconId / spritesheetRows);
+        let drawX = x + width / 2 - 16;
+        let drawY = y + height / 2 - 16;
 
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x, y, width, height);
-        this.ctx.drawImage(this.icons, 32 * iconId, 0, 32, 32, x, y, 32, 32);
+        this.ctx.drawImage(this.icons, spritesheetX * 32, spritesheetY * 32, 32, 32, drawX, drawY, 32, 32);
+
+        if (isSelected) {
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeStyle = "#EEEEEE";
+            this.ctx.strokeRect(x, y, width, height);
+        }
 
         var isHovered =
             this.input.mousePosition.x > x &&

@@ -30,13 +30,11 @@ function start() {
 }
 function update() {
     game.update();
-
     countToRound--;
     if (countToRound <= 0) {
         countToRound = Config.countToRound;
         game.updateRound();
     }
-
     sendToAll("WALK", game.getCharacterPositions());
     sendToAll("POINTS", { countToRound: countToRound, points: game.getCharacterActionPoints() });
 }
@@ -90,7 +88,7 @@ function removePlayer(socket: any) {
     saveToFile();
 }
 function receive(json: string, socket: any) {
-    //console.log(json.substring(0,128));
+
     let object = JSON.parse(json);
     let type: string = object.type;
     let data = object.data;
@@ -146,7 +144,6 @@ function getPlayerId(socket: any): number {
     return -1; //socket not registered
 }
 function receiveAsset(socket: any, data: any) {
-
     let asset = game.setAsset(data);
     if (asset.id != -1) {
         sendToAll("ASSET", data);

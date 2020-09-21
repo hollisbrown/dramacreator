@@ -150,17 +150,6 @@ export default class Input {
         let mousePixel = this.mousePixel();
         return mousePixel.y * Config.pixelsPerRow + mousePixel.x;
     }
-    mouseTile(cameraPosition: Position, cameraZoom: number): Position {
-        let mouseCamera = this.mouseCamera(cameraPosition, cameraZoom);
-        return new Position(
-            Math.floor(mouseCamera.x / Config.pixelsPerRow),
-            Math.floor(mouseCamera.y / Config.pixelsPerRow)
-        );
-    }
-    mouseTileId(cameraPosition: Position, cameraZoom: number): number {
-        let mouseTile = this.mouseTile(cameraPosition, cameraZoom);
-        return mouseTile.y * Config.tilesPerRow + mouseTile.x;
-    }
     getTileId(position: Position) {
         position = this.getTilePosition(position);
         return position.y * Config.tilesPerRow + position.x;

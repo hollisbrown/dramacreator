@@ -1,5 +1,6 @@
 import Position from "./Position";
 import Container from "./Container";
+import { ItemType } from "./Asset";
 
 export default class Item {
 
@@ -18,6 +19,7 @@ export default class Item {
     constructor(
         id: number = 0,
         assetId: number = 0,
+        type: ItemType = ItemType.NONE,
         position: Position = new Position,
         containerId: number = 0,
         containerSlot: number = 0
@@ -25,6 +27,7 @@ export default class Item {
         this.isUsed = false;
         this.id = id;
         this.assetId = assetId;
+        this.type = type;
         this.position = position;
         this.positionRender = position;
         this.containerId = containerId;
@@ -35,10 +38,4 @@ export default class Item {
         this.container = new Container(9);
     }
 }
-export class ItemType {
-    static NONE: number = 0;
-    static WEAPON: number = 1;
-    static FOOD: number = 2;
-    static CONTAINER: number = 3;
-    static PROCESSOR: number = 4;
-}
+

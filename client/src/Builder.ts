@@ -1,7 +1,7 @@
 import Position from '../../common/src/Position';
 import Config from '../../common/src/Config';
 import Game from '../../common/src/Game';
-import Asset, { AssetType } from '../../common/src/Asset';
+import Asset, { AssetType, TileType, ItemType } from '../../common/src/Asset';
 import Tile from '../../common/src/Tile';
 import Item from '../../common/src/Item';
 import Character from '../../common/src/Character';
@@ -10,7 +10,6 @@ import UI from './UI';
 import Renderer, { ISortable } from './Renderer';
 import Camera from './Camera';
 import Editor from './Editor';
-import Sprite from '../../common/src/Sprite';
 
 export default class Builder {
 
@@ -23,8 +22,9 @@ export default class Builder {
     camera: Camera;
 
     x: number = 0;
-    y: number = 60;
+    y: number = 0;
     width: number = 330;
+    filterHeight: number = 120;
     assetHeight: number = 52;
     assetPadding: number = 0;
 
@@ -34,8 +34,8 @@ export default class Builder {
     hasSortableSelected: boolean = false;
     hasSortablePicked: boolean = false;
     dropdownOptions: string[] = ["All", "Floors", "Walls", "Items", "Characters", "Deleted"];
-    dropdownSelection: number = 0;
-    isDropdownHovered: boolean = false;
+    selectedAssetType: number = 0;
+    isFilterHovered: boolean = false;
     isDropdownEnabled: boolean = false;
 
     assetList: Asset[];
@@ -64,7 +64,7 @@ export default class Builder {
 
         this.editor = new Editor(canvas, ctx, input, ui, send);
         this.selectedAsset = new Asset(-1, AssetType.NONE);
-        this.assetList = this.game.assets;
+
     }
     update() {
         if (this.isEditorEnabled) {
@@ -111,8 +111,7 @@ export default class Builder {
         this.cursor();
     }
     background() {
-
-        let totalHeight = this.assetList.length * (this.assetHeight + this.assetPadding);
+        let totalHeight = this.assetList.length * (this.assetHeight + this.assetPadding) + this.filterHeight;
         //this.ctx.fillStyle = "#333333";
         //this.ctx.fillRect(this.x, this.y, this.width, totalHeight);
 
@@ -127,46 +126,50 @@ export default class Builder {
         }
     }
     showFilter() {
+
         let filterY = 0;
-        let height = 60;
-        if (this.isDropdownEnabled) {
-            height = 260;
-        }
-        this.isDropdownHovered = (
+        let buttonSize = 60;
+        let padding = 4;
+        let margin = 30;
+
+        this.isFilterHovered = (
             this.input.mousePosition.x > this.x &&
             this.input.mousePosition.x < this.x + this.width &&
             this.input.mousePosition.y > filterY &&
-            this.input.mousePosition.y < filterY + height
+            this.input.mousePosition.y < filterY + this.filterHeight
         )
-        if (this.isDropdownEnabled) {
-            let selection = this.ui.dropDown(
-                this.dropdownOptions,
-                this.dropdownSelection,
-                this.x, filterY, this.width, 60, "#444444");
 
-            if (selection != -1) {
-                this.dropdownSelection = selection;
-                this.filterAssetList(this.dropdownSelection);
-                this.isDropdownEnabled = false;
-            }
-        } else {
-            if (this.ui.button(
-                this.dropdownOptions[this.dropdownSelection],
-                this.x, filterY, this.width, 60, "#333333")
-            ) {
-                this.isDropdownEnabled = true;
-            }
+        //Background
+        this.ctx.fillStyle = "#0B0B0B";
+        this.ctx.fillRect(this.x, filterY, this.width, this.filterHeight);
+
+        //Icons
+        if (this.ui.buttonIcon(4, this.x + margin, filterY + margin, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.NONE))) {
+            this.selectedAssetType = AssetType.NONE;
+            this.filterAssetList(this.selectedAssetType);
+        }
+
+        if (this.ui.buttonIcon(5, this.x + (buttonSize + padding) * 1 + margin, filterY + margin, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.TILE))) {
+            this.selectedAssetType = AssetType.TILE;
+            this.filterAssetList(this.selectedAssetType);
+        }
+
+        if (this.ui.buttonIcon(8, this.x + (buttonSize + padding) * 2 + margin, filterY + margin, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.ITEM))) {
+            this.selectedAssetType = AssetType.ITEM;
+            this.filterAssetList(this.selectedAssetType);
+        }
+
+        if (this.ui.buttonIcon(10, this.x + (buttonSize + padding) * 3 + margin, filterY + margin, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.CHARACTER))) {
+            this.selectedAssetType = AssetType.CHARACTER;
+            this.filterAssetList(this.selectedAssetType);
         }
     }
     showAssetList() {
 
-        //disable buttons while dropdown
-        let isActive = !this.isDropdownEnabled && !this.isDropdownHovered;
-
         //Scroll
         if (this.input.scrollDelta != 0) {
             this.y -= this.input.scrollDelta;
-            let min = 60;
+            let min = this.filterHeight;
             let max = -this.assetList.length * (this.assetHeight + this.assetPadding) + this.canvas.height;
             this.y = Math.max(this.y, max);
             this.y = Math.min(this.y, min);
@@ -179,13 +182,13 @@ export default class Builder {
             let x = this.x;
             let y = this.y + i * (this.assetHeight + this.assetPadding);
 
-            if (this.ui.asset(img, asset.name, x, y, this.width, this.assetHeight, "#111111") && isActive) {
+            //Select Asset
+            if (this.ui.asset(img, asset.name, x, y, this.width, this.assetHeight, "#111111") && !this.isFilterHovered) {
 
                 this.selectedAsset = asset;
 
                 switch (this.selectedAsset.type) {
-                    case AssetType.WALL:
-                    case AssetType.FLOOR:
+                    case AssetType.TILE:
                         this.hasTileSelected = true;
                         break;
                     case AssetType.ITEM:
@@ -196,8 +199,9 @@ export default class Builder {
             }
 
             //Edit
-            if (this.ui.buttonIcon(0, x + 240, y + 10, 32, 32, "#1f1f1f") && isActive) {
+            if (this.ui.buttonIcon(0, x + 240, y + 10, 32, 32, "#1f1f1f") && !this.isFilterHovered) {
                 let assetCopy = Object.assign(new Asset(), asset);
+
                 this.editor.load(assetCopy);
                 this.isEditorEnabled = true;
                 this.reset();
@@ -205,18 +209,17 @@ export default class Builder {
 
             //Copy
             if (asset.type != AssetType.NONE) {
-                if (this.ui.buttonIcon(1, x + 280, y + 10, 32, 32, "#1f1f1f") && isActive) {
+                if (this.ui.buttonIcon(1, x + 280, y + 10, 32, 32, "#1f1f1f") && !this.isFilterHovered) {
                     let assetCopy = Object.assign(new Asset(), asset);
                     assetCopy.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
-                    //object.assign creates a shallow copy, pixels is an object itself and seems to get passed by reference instead?. 
-                    //TODO: get schooled
+
                     this.editor.copy(assetCopy);
                     this.isEditorEnabled = true;
                     this.reset();
                 }
             } else {
                 //Delete / Restore
-                if (this.ui.buttonIcon(3, x + 280, y + 10, 32, 32, "#1f1f1f") && isActive) {
+                if (this.ui.buttonIcon(3, x + 280, y + 10, 32, 32, "#1f1f1f") && !this.isFilterHovered) {
                     asset.isUsed = !asset.isUsed;
                     this.send("ASSET", asset);
                     this.reset();
@@ -231,22 +234,12 @@ export default class Builder {
             }
         }
     }
-    filterAssetList(selection: number) {
+    filterAssetList(selection: AssetType) {
         this.assetList = [];
-        this.y = 60;
+        this.y = this.filterHeight;
 
-        if (selection == 5) {//All Deleted
-            for (var i = 0; i < this.game.assets.length; i++) {
-                if (this.game.assets[i].type == AssetType.NONE) {
-                    this.assetList.push(this.game.assets[i]);
-                }
-            }
-        } else if (selection == 0) {//All used
-            for (var i = 0; i < this.game.assets.length; i++) {
-                if (this.game.assets[i].isUsed) {
-                    this.assetList.push(this.game.assets[i]);
-                }
-            }
+        if (selection == 0) {//All
+            this.assetList = this.game.assets;
         } else {//Filtered by AssetType
             for (var i = 0; i < this.game.assets.length; i++) {
                 if (this.game.assets[i].isUsed &&
@@ -303,19 +296,32 @@ export default class Builder {
             return;
         }
         switch (this.selectedAsset.type) {
-            case AssetType.WALL:
-            case AssetType.FLOOR:
-                let tileId = this.input.mouseTileId(this.camera.position, this.camera.zoom);
-                let tile = new Tile(tileId, this.selectedAsset.id, this.selectedAsset.type);
+            case AssetType.TILE:
+                let mouseTilePosition = this.camera.getWorldPosition(this.input.mousePosition);
+                let tile = new Tile(
+                    this.input.getTileId(mouseTilePosition),
+                    this.selectedAsset.id,
+                    this.selectedAsset.tileType,
+                    (this.selectedAsset.tileType == TileType.FLOOR)
+                );
                 this.send("TILE", tile);
                 break;
             case AssetType.ITEM:
-                let item = new Item(-1, this.selectedAsset.id, position, 0, 0);
+                let item = new Item(
+                    -1,
+                    this.selectedAsset.id,
+                    this.selectedAsset.itemType,
+                    position
+                );
                 item.isUsed = true;
                 this.send("ITEM", item);
                 break;
             case AssetType.CHARACTER:
-                let character = new Character(-1, this.selectedAsset.id, position);
+                let character = new Character(
+                    -1,
+                    this.selectedAsset.id,
+                    position
+                );
                 character.isUsed = true;
                 this.send("CHARACTER", character);
                 break;
@@ -365,7 +371,7 @@ export default class Builder {
         this.reset();
     }
     reset() {
-        this.filterAssetList(this.dropdownSelection);
+        this.filterAssetList(this.selectedAssetType);
         this.isDropdownEnabled = false;
         this.selectedAsset = new Asset(-1);
         this.hasTileSelected = false;

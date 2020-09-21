@@ -21,11 +21,12 @@ var camera: Camera = new Camera(canvas);
 var renderer: Renderer = new Renderer(canvas, ctx, camera, game, ui);
 var builder: Builder = new Builder(canvas, ctx, input, game, ui, renderer, camera, send);
 
-class Mode {
-    static FREE: number = 0;
-    static BUILD: number = 1;
-    static PLAY: number = 2;
+enum Mode {
+    FREE = 0,
+    BUILD = 1,
+    PLAY = 2
 }
+
 var mode: Mode = Mode.FREE;
 var lastTimestamp: number = 0;
 var isChatting: boolean = false;
@@ -155,8 +156,8 @@ function updateFree(deltaTime: number) {
     menuSortable();
 }
 function updateBuild(deltaTime: number) {
-
     builder.update();
+
     if (!builder.isEditorEnabled) {
         camera.movePosition(input.direction, deltaTime);
     }
@@ -180,23 +181,19 @@ function updatePlay(deltaTime: number) {
 
     hoveredSortable = renderer.getSortableAtPosition(positionMouseWorld);
     if (hoveredSortable != null) {
+        renderer.setLookName(game.assets[hoveredSortable.assetId].name, hoveredSortable.position);
         cursorSortable(positionMouseWorld);
         renderer.characterPath = [];
-
         if (input.isMouseDown && input.isMouseRight) {
             //look
-            renderer.lookText = game.assets[hoveredSortable.assetId].name + " – " + game.assets[hoveredSortable.assetId].description;
-            renderer.lookPosition = hoveredSortable.position;
-            renderer.lookTimer = 6;
+            renderer.setLookDescription(game.assets[hoveredSortable.assetId].description, hoveredSortable.position);
         }
-
     } else {
         if (lastMouseTileId != tileIdMouse) {
             renderer.characterPath = getPath(tileIdMouse, vicinity);
         }
         cursorTile(input.mousePosition, positionMouseTile);
     }
-
     camera.setPosition(positionCharacter);
 
     if (
@@ -321,7 +318,6 @@ function send(type: string, data: any) {
 function receiveGame(data: any) {
     let gameData = Object.assign(new Game, data);
     game.load(gameData);
-
     for (var i = 0; i < game.assets.length; i++) {
         renderer.createSprites(game.assets[i]);
     }
@@ -329,6 +325,7 @@ function receiveGame(data: any) {
 }
 function receiveAsset(data: any) {
     let asset = game.setAsset(data);
+
     if (mode == Mode.BUILD) {
         builder.filterAssetList(builder.selectedAsset.type);
     }
@@ -456,7 +453,7 @@ function getVicinity(startId: number): number[][] {
             if (
                 neighbourIds[i] != -1 &&
                 neighbourIds[i] < game.tiles.length &&
-                game.tiles[neighbourIds[i]].type == AssetType.FLOOR
+                game.tiles[neighbourIds[i]].isWalkable
             ) {
                 let hasNew = true;
                 for (var j = 0; j < visited.length; j++) {

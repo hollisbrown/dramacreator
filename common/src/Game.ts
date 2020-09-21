@@ -1,5 +1,5 @@
 import Config from './Config';
-import Asset, { AssetType } from './Asset';
+import Asset, { AssetType, TileType, ItemType } from './Asset';
 import Sprite from './Sprite';
 import Tile from './Tile';
 import Item from './Item';
@@ -7,7 +7,6 @@ import Character from './Character';
 import Position from './Position';
 
 export default class Game {
-
     assets: Asset[] = [];
     tiles: Tile[] = [];
     items: Item[] = [];
@@ -18,22 +17,25 @@ export default class Game {
     create() {
         for (var i = 0; i < Config.maxAssets; i++) {
             let sprite = new Sprite(Config.pixelsPerRow);
-            let asset = new Asset(i, AssetType.NONE, "Unnamed " + i, "Nothing to see here.", sprite);
+            let randomColorIndex = Math.floor(Math.random() * Config.colorSet.length - 2) + 1;
+            sprite.setAllPixels(randomColorIndex);
+            let asset = new Asset(i, AssetType.NONE, "Unnamed " + i, "Nothing to see here.", false, sprite);
             this.assets.push(asset);
         }
+
         for (var i = 0; i < Config.tilesPerRow * Config.tilesPerRow; i++) {
             let x = i % Config.tilesPerRow;
             let y = Math.floor(i / Config.tilesPerRow);
-            let tile = new Tile(i, 1, AssetType.NONE, new Position(x, y));
+            let tile = new Tile(i, 1, TileType.NONE, true, new Position(x, y));
             tile.setNeighbours(Config.tilesPerRow);
             this.tiles.push(tile);
         }
         for (var i = 0; i < Config.maxItems; i++) {
-            let item = new Item(i);
+            let item = new Item(i, 2, ItemType.NONE);
             this.items.push(item);
         }
         for (var i = 0; i < Config.maxCharacters; i++) {
-            let character = new Character(i);
+            let character = new Character(i, 3);
             this.characters.push(character);
             character.actionPoints = Config.maxPoints;
         }
@@ -41,6 +43,7 @@ export default class Game {
         this.isRunning = true;
     }
     load(data: Game) {
+
         for (var i = 0; i < data.assets.length; i++) {
             let asset = Object.assign(new Asset(), data.assets[i]);
             let sprite = Object.assign(new Sprite(), data.assets[i].sprite);
@@ -52,8 +55,6 @@ export default class Game {
         }
         for (var i = 0; i < data.tiles.length; i++) {
             let tile = Object.assign(new Tile, data.tiles[i]);
-            tile.type = this.assets[tile.assetId].type;
-
             let x = i % Config.tilesPerRow;
             let y = Math.floor(i / Config.tilesPerRow);
             tile.position = new Position(x, y);
@@ -75,7 +76,8 @@ export default class Game {
             character.positionTarget = Object.assign(new Position, data.characters[i].positionTarget);
             character.actionPoints = Config.maxPoints;
             this.characters.push(character);
-            this.characterPaths.push([]);
+            let newPath: number[] = [];
+            this.characterPaths.push(newPath);
         }
         this.isRunning = true;
     }
@@ -122,6 +124,7 @@ export default class Game {
         if (tile.id >= 0 && tile.id < this.tiles.length) {
             this.tiles[tile.id].assetId = tile.assetId;
             this.tiles[tile.id].type = tile.type;
+            this.tiles[tile.id].isWalkable = tile.isWalkable;
             this.tiles[tile.id].setNeighbours(Config.tilesPerRow);
         }
         return tile;
@@ -190,12 +193,5 @@ export default class Game {
     }
     getCharacterActionPoints(): number[] {
         return this.characters.map(e => e.actionPoints);
-    }
-    getTileType(position: Position): AssetType {
-        let id = position.y * Config.tilesPerRow + position.x;
-        if (id >= 0 && id < this.tiles.length) {
-            return this.assets[this.tiles[id].assetId].type;
-        }
-        return AssetType.NONE;
     }
 }

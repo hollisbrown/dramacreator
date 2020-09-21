@@ -1,9 +1,8 @@
-import Asset, { AssetType } from '../../common/src/Asset';
+import Asset, { AssetType, TileType, ItemType } from '../../common/src/Asset';
 import Sprite from '../../common/src/Sprite';
 import Config from '../../common/src/Config';
 import Input from './Input';
 import UI from './UI';
-import Position from '../../common/src/Position';
 
 export default class Editor {
 
@@ -20,10 +19,7 @@ export default class Editor {
     isGridVisible: boolean = true;
     isMouseOnSprite: boolean = false;
     isTranslatingPixels: boolean = false;
-    isDropdownEnabled: boolean = false;
-    isDropdownHovered: boolean = false;
-    dropdownOptions: string[] = ["None", "Floor", "Wall", "Item", "Character"];
-    dropdownSelection: number = 0;
+
     isTypingName: boolean = false;
     isTypingDescription: boolean = false;
 
@@ -33,6 +29,13 @@ export default class Editor {
 
     asset: Asset = new Asset();
     send: (type: string, data: any) => void; //callback function
+
+    optionsAssetType: string[] = ["<No Asset Type>", "Tile", "Item", "Character"];
+    selectedAssetType: number = 0;
+    optionsTileType: string[] = ["<No Tile Type>", "Floor", "Wall", "Liquid"];
+    selectedTileType: number = 0;
+    optionsItemType: string[] = ["<No Item Type>", "Weapon", "Food", "Container", "Processor"];
+    selectedItemType: number = 0;
 
     constructor(
         canvas: any,
@@ -154,30 +157,27 @@ export default class Editor {
         this.ctx.stroke();
     }
     tools() {
-
         let x = 940;
         let y = 20;
         let width = 120;
         let height = 40;
         let padding = 4;
-
         for (var i = 0; i < this.toolSet.length; i++) {
-
-            if (this.ui.button(this.toolSet[i], x + (width * i) + padding, y, width, height, "#333333")) {
+            if (this.ui.button(this.toolSet[i], x + (width * i) + padding * i, y, width, height, "#333333")) {
                 this.selectedTool = i;
             }
             if (i == this.selectedTool) {
                 //cursor
-                this.ctx.lineWidth = 2;
+                this.ctx.lineWidth = 1;
                 this.ctx.strokeStyle = "#ffffff";
-                this.ctx.strokeRect(x + (width * i), y, width, height);
+                this.ctx.strokeRect(x + (width * i) + padding * i, y, width, height);
             }
         }
     }
     commands() {
 
         let x = 930;
-        let y = 110;
+        let y = 80;
 
         let width = 60;
         let height = 40;
@@ -195,87 +195,134 @@ export default class Editor {
         if (this.ui.button("DOWN", x + width / 2 + padding, y + (height + padding) * 2, width, height, "#222222")) {
             this.asset.sprite.pixels = this.asset.sprite.getPixelsTranslated(0, 1);
         }
-        if (this.ui.button("FLIP", x + width / 2 + padding, y + (height + padding) * 4, width, height, "#222222")) {
+        if (this.ui.button("FLIP", x + width / 2 + padding, y + (height + padding) * 3, width, height, "#222222")) {
             this.asset.sprite.pixels = this.asset.sprite.getPixelsFlipped();
         }
 
-        width = 100;
-        height = 50;
+        width = 80;
+        height = 40;
 
         if (this.ui.button("GRID", x + 140, y, width, height, "#222222")) {
             this.isGridVisible = !this.isGridVisible;
         }
-        if (this.ui.button("CLEAR", x + 140, y + 55, width, height, "#222222")) {
+        if (this.ui.button("CLEAR", x + 140, y + (height + padding) * 1, width, height, "#222222")) {
             this.asset.sprite.setAllPixels(0);
         }
-        if (this.ui.button("DISCARD", x + 140, y + 110, width, height, "#882222")) {
+        if (this.ui.button("DISCARD", x + 140, y + (height + padding) * 2, width, height, "#882222")) {
             this.close();
         }
-        if (this.ui.button("SAVE", x + 140, y + 165, width, height, "#228822")) {
+        if (this.ui.button("SAVE", x + 140, y + (height + padding) * 3, width, height, "#228822")) {
             this.save();
         }
 
     }
     properties() {
-
         let x = 940;
-        let y = 400;
-        let padding = 4;
+        let y = 320;
         let width = 250;
-        let height = 600;
+        let buttonSize = 40;
+        let padding = 4;
+        let titleHeight = 16;
+
+        this.ctx.font = this.ui.fontDefault;
+        this.ctx.textAlign = "left";
+        this.ctx.fillStyle = "#EEEEEE";
+        this.ctx.fillText("Asset Type:", x, y);
+        this.ctx.fillText(AssetType[this.selectedAssetType], x + 110, y);
+
+        if (this.ui.buttonIcon(4, x + 0, y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.NONE))) {
+            this.selectedAssetType = AssetType.NONE;
+        }
+        if (this.ui.buttonIcon(5, x + (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.TILE))) {
+            this.selectedAssetType = AssetType.TILE;
+        }
+        if (this.ui.buttonIcon(8, x + 2 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.ITEM))) {
+            this.selectedAssetType = AssetType.ITEM;
+        }
+        if (this.ui.buttonIcon(10, x + 3 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedAssetType == AssetType.CHARACTER))) {
+            this.selectedAssetType = AssetType.CHARACTER;
+        }
+
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = "#EEEEEE";
+
+        y = y + 100;
+        switch (this.selectedAssetType) {
+            case AssetType.TILE:
+                this.ctx.fillStyle = "#EEEEEE";
+                this.ctx.fillText("Tile Type:", x, y);
+                this.ctx.fillText(TileType[this.selectedTileType], x + 110, y);
+
+                if (this.ui.buttonIcon(4, x + 0, y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedTileType == TileType.NONE))) {
+                    this.selectedTileType = TileType.NONE;
+                }
+                if (this.ui.buttonIcon(5, x + (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedTileType == TileType.FLOOR))) {
+                    this.selectedTileType = TileType.FLOOR;
+                }
+                if (this.ui.buttonIcon(7, x + 2 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedTileType == TileType.WALL))) {
+                    this.selectedTileType = TileType.WALL;
+                }
+                if (this.ui.buttonIcon(6, x + 3 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedTileType == TileType.LIQUID))) {
+                    this.selectedTileType = TileType.LIQUID;
+                }
+                break;
+
+            case AssetType.ITEM:
+                this.ctx.fillStyle = "#EEEEEE";
+                this.ctx.fillText("Item Type:", x, y);
+                this.ctx.fillText(ItemType[this.selectedItemType], x + 110, y);
+
+                if (this.ui.buttonIcon(4, x + 0, y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedItemType == ItemType.NONE))) {
+                    this.selectedItemType = ItemType.NONE;
+                }
+                if (this.ui.buttonIcon(9, x + (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedItemType == ItemType.WEAPON))) {
+                    this.selectedItemType = ItemType.WEAPON;
+                }
+                if (this.ui.buttonIcon(8, x + 2 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedItemType == ItemType.FOOD))) {
+                    this.selectedItemType = ItemType.FOOD;
+                }
+                if (this.ui.buttonIcon(11, x + 3 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedItemType == ItemType.CONTAINER))) {
+                    this.selectedItemType = ItemType.CONTAINER;
+                }
+                if (this.ui.buttonIcon(12, x + 4 * (buttonSize + padding), y + titleHeight, buttonSize, buttonSize, "#222222", (this.selectedItemType == ItemType.PROCESSOR))) {
+                    this.selectedItemType = ItemType.PROCESSOR;
+                }
+                break;
+        }
+
+
+
+        y = y + 100;
+        this.ctx.fillStyle = "#EEEEEE";
+        this.ctx.fillText("Name:", x, y);
 
         if (this.isTypingName) {
             this.asset.name = this.input.typedString;
-            if (this.ui.textBoxActive(x, y + 80, width, 60)) {
+            if (this.ui.textBoxActive(x, y + titleHeight, width, 60)) {
                 this.input.stopTyping();
                 this.isTypingName = false;
             }
         } else {
-            if (this.ui.textBox(this.asset.name, x, y + 80, width, 60)) {
+            if (this.ui.textBox(this.asset.name, x, y + titleHeight, width, 60)) {
                 this.input.startTyping(this.asset.name);
                 this.isTypingName = true;
             }
         }
+
+        y = y + 100;
+        this.ctx.fillStyle = "#EEEEEE";
+        this.ctx.fillText("Description:", x, y);
+
         if (this.isTypingDescription) {
             this.asset.description = this.input.typedString;
-            if (this.ui.textBoxActive(x, y + 160, width, 120)) {
+            if (this.ui.textBoxActive(x, y + titleHeight, width, 120)) {
                 this.input.stopTyping();
                 this.isTypingDescription = false;
             }
         } else {
-            if (this.ui.textBox(this.asset.description, x, y + 160, width, 120)) {
+            if (this.ui.textBox(this.asset.description, x, y + titleHeight, width, 120)) {
                 this.input.startTyping(this.asset.description);
                 this.isTypingDescription = true;
-            }
-        }
-
-        let dropdownHeight = 60;
-        if (this.isDropdownEnabled) {
-            dropdownHeight = dropdownHeight * this.dropdownOptions.length;
-        }
-        this.isDropdownHovered = (
-            this.input.mousePosition.x > x &&
-            this.input.mousePosition.x < x + width &&
-            this.input.mousePosition.y > y &&
-            this.input.mousePosition.y < dropdownHeight
-        )
-        if (this.isDropdownEnabled) {
-            let selection = this.ui.dropDown(
-                this.dropdownOptions,
-                this.dropdownSelection,
-                x, y, width, 60, "#444444");
-
-            if (selection != -1) {
-                this.dropdownSelection = selection;
-                this.asset.type = selection;
-                this.isDropdownEnabled = false;
-            }
-        } else {
-            if (this.ui.button(
-                this.dropdownOptions[this.dropdownSelection],
-                x, y, width, 60, "#333333")
-            ) {
-                this.isDropdownEnabled = true;
             }
         }
     }
@@ -284,7 +331,9 @@ export default class Editor {
         newAsset.sprite = Object.assign(new Sprite(), asset.sprite);
         newAsset.sprite.pixels = Object.assign(new Array(), asset.sprite.pixels);
 
-        this.dropdownSelection = newAsset.type;
+        this.selectedAssetType = newAsset.type;
+        this.selectedTileType = newAsset.tileType;
+        this.selectedItemType = newAsset.itemType;
         this.selectedTool = 0;
         this.isEnabled = true;
         this.asset = newAsset;
@@ -300,12 +349,18 @@ export default class Editor {
             newAsset.name = newAsset.name.substr(0, Config.maxNameLength);
         }
 
+        this.selectedAssetType = newAsset.type;
+        this.selectedTileType = newAsset.tileType;
+        this.selectedItemType = newAsset.itemType;
         this.selectedTool = 0;
         this.isEnabled = true;
         this.asset = newAsset;
     }
     save() {
         this.asset.isUsed = true;
+        this.asset.type = this.selectedAssetType;
+        this.asset.tileType = this.selectedTileType;
+        this.asset.itemType = this.selectedItemType;
         this.send("ASSET", this.asset);
         this.isEnabled = false;
     }
